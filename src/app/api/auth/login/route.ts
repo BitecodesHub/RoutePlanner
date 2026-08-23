@@ -8,7 +8,7 @@ import {
 } from "@/lib/auth";
 import { ApiError, getClientIp, withErrorHandling } from "@/lib/http";
 import { audit } from "@/lib/audit";
-import { rateLimit } from "@/lib/rate-limit";
+import { clearRateLimit, rateLimit } from "@/lib/rate-limit";
 import { loginSchema } from "@/lib/validation";
 import type { SessionDto } from "@/lib/types";
 
@@ -31,7 +31,8 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   const { email, password } = loginSchema.parse(body);
   const ip = getClientIp(req) ?? "unknown";
 
-  const limit = rateLimit(`login:${ip}:${email.toLowerCase()}`, 5, 15 * 60_000);
+  const limitKey = `login:${ip}:${email.toLowerCase()}`;
+  const limit = rateLimit(limitKey, 5, 15 * 60_000);
   if (!limit.allowed) {
     throw new ApiError(
       429,
@@ -54,6 +55,9 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   if (!passwordOk || user.status !== "ACTIVE") {
     throw new ApiError(401, GENERIC_MESSAGE, "INVALID_CREDENTIALS");
   }
+
+  // Only failed attempts should count towards the lockout window.
+  clearRateLimit(limitKey);
 
   await prisma.user.update({
     where: { id: user.id },

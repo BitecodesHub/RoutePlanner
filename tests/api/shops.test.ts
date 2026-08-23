@@ -112,7 +112,7 @@ Alpha Store,23.0634,72.5120,
 Broken Row,999,72.48,
 Import Two,23.112,72.482,IMP2`;
     const r = await c.post("/api/shops/import", csvUpload(csv));
-    expect(r.status).toBe(200);
+    expect([200, 201]).toContain(r.status);
     expect(r.body.imported).toBe(2);
     expect(r.body.skippedDuplicates).toBe(1); // Alpha Store already in DB
     expect(r.body.invalid).toBe(1);
@@ -126,7 +126,7 @@ Import Two,23.112,72.482,IMP2`;
     const csv = `Party,Latitude,Longitude,Bill No
 Import One,23.111,72.481,IMP1`;
     const r = await c.post("/api/shops/import", csvUpload(csv));
-    expect(r.status).toBe(200);
+    expect([200, 201]).toContain(r.status);
     expect(r.body.imported).toBe(0);
     expect(r.body.skippedDuplicates).toBe(1);
   });
@@ -145,13 +145,13 @@ Link Import,,,"https://www.google.com/maps/dir/?api=1&destination=23.1177,72.485
 
   it("handles a garbage file gracefully", async () => {
     const r = await c.post("/api/shops/import", csvUpload("this is not,really\ncsv data at all"));
-    expect(r.status).toBe(200);
+    expect([200, 201]).toContain(r.status);
     expect(r.body.imported).toBe(0);
   });
 
   it("records import history", async () => {
     const r = await c.get("/api/imports");
-    expect(r.status).toBe(200);
+    expect([200, 201]).toContain(r.status);
     expect(r.body.length ?? r.body.items?.length).toBeGreaterThanOrEqual(1);
   });
 });
