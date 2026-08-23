@@ -35,6 +35,11 @@ export function rateLimit(
   return { allowed: true, retryAfterSeconds: 0 };
 }
 
+/** Forgive a key — e.g. clear failed-login counters after a success. */
+export function clearRateLimit(key: string): void {
+  buckets.delete(key);
+}
+
 export function resetRateLimits(): void {
   buckets.clear();
 }
