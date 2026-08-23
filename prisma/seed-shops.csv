@@ -1,0 +1,27 @@
+Stop No,Slip Sr,Bill No,Party,Debit,Latitude,Longitude,Confidence,Km from Godown,Google Maps Link
+1,12,2607640,MILK & MORE - (C),11845.0,23.0634347,72.5120108,HIGH,0.95,"https://www.google.com/maps/dir/?api=1&destination=23.0634347,72.5120108&travelmode=driving"
+2,15,2607643,BRAHMANI KIRANA STORES,2980.0,23.0725443,72.5086168,MEDIUM,1.28,"https://www.google.com/maps/dir/?api=1&destination=23.0725443,72.5086168&travelmode=driving"
+3,22,2607650,SHREEJI DAIRY PARLOUR,1962.0,23.0740722,72.5059056,MEDIUM,1.35,"https://www.google.com/maps/dir/?api=1&destination=23.0740722,72.5059056&travelmode=driving"
+4,14,2607642,SHREEJI SUPER MART - SCIENCE CITY,14381.0,23.0743271,72.505498,CONFIRMED,1.36,"https://www.google.com/maps/dir/?api=1&destination=23.0743271,72.505498&travelmode=driving"
+5,21,2607649,SHREE RANG DAIRY PARLOUR - S.CITY,21026.0,23.0705208,72.5139505,HIGH,1.46,"https://www.google.com/maps/dir/?api=1&destination=23.0705208,72.5139505&travelmode=driving"
+6,19,2607647,UMA DAIRY PARLOUR,4493.0,23.0755305,72.5031617,HIGH,1.47,"https://www.google.com/maps/dir/?api=1&destination=23.0755305,72.5031617&travelmode=driving"
+7,11,2607639,JAY BOOT BHAWANI PARLOUR - SCIENCE CITY,12569.0,23.0736857,72.5114744,CONFIRMED,1.55,"https://www.google.com/maps/dir/?api=1&destination=23.0736857,72.5114744&travelmode=driving"
+8,13,2607641,GANESH SUPER MARKET - SCIENCE CITY,3125.0,23.0732383,72.5134617,HIGH,1.63,"https://www.google.com/maps/dir/?api=1&destination=23.0732383,72.5134617&travelmode=driving"
+9,5,2607633,SHREE UMIYA KIRANA & PROVISION STORES,324.0,23.074726,72.5122329,MEDIUM,1.68,"https://www.google.com/maps/dir/?api=1&destination=23.074726,72.5122329&travelmode=driving"
+10,23,2607651,BAJRANG SUPER MARKET - SCIENCE CITY,74307.0,23.0783399,72.50308,MEDIUM,1.78,"https://www.google.com/maps/dir/?api=1&destination=23.0783399,72.50308&travelmode=driving"
+11,4,2607632,SHREE PATEL DAIRY (SCI),11290.0,23.0786692,72.5032331,HIGH,1.82,"https://www.google.com/maps/dir/?api=1&destination=23.0786692,72.5032331&travelmode=driving"
+12,1,2607590,SHIV CORNER - THALTEJ,,23.0499564,72.5154692,HIGH,1.89,"https://www.google.com/maps/dir/?api=1&destination=23.0499564,72.5154692&travelmode=driving"
+13,20,2607648,J.B.PARLOUR (APO),7667.0,23.0823738,72.5008766,HIGH,2.24,"https://www.google.com/maps/dir/?api=1&destination=23.0823738,72.5008766&travelmode=driving"
+14,2,2607594,BAJRANG SUPER MARKET - BODAKDEV,340.0,23.0408362,72.5047735,MEDIUM,2.4,"https://www.google.com/maps/dir/?api=1&destination=23.0408362,72.5047735&travelmode=driving"
+15,16,2607644,SHRINATH KIRANA PRO STORE,15917.0,23.0885863,72.4918074,HIGH,3.13,"https://www.google.com/maps/dir/?api=1&destination=23.0885863,72.4918074&travelmode=driving"
+16,3,2607631,RIDHDHI SIDDHI PROVISION STORE,21246.0,23.058962,72.5359921,LOW,3.42,"https://www.google.com/maps/dir/?api=1&destination=23.058962,72.5359921&travelmode=driving"
+17,9,2607637,BRHAMANI PARLOUR,7353.0,23.0778367,72.5378725,LOW,3.98,"https://www.google.com/maps/dir/?api=1&destination=23.0778367,72.5378725&travelmode=driving"
+18,10,2607638,URBAN ZEST MART - BHADAJ,1642.0,23.0929133,72.4779617,CONFIRMED,4.25,"https://www.google.com/maps/dir/?api=1&destination=23.0929133,72.4779617&travelmode=driving"
+19,6,2607634,SHREE DWARKESH PARLOUR,949.0,23.1009596,72.4822138,MEDIUM,4.79,"https://www.google.com/maps/dir/?api=1&destination=23.1009596,72.4822138&travelmode=driving"
+20,8,2607636,PATEL PAN PARLOUR,1530.0,23.0363187,72.4548847,MEDIUM,5.69,"https://www.google.com/maps/dir/?api=1&destination=23.0363187,72.4548847&travelmode=driving"
+
+NO COORDINATE - capture GPS on site
+Stop No,Slip Sr,Bill No,Party,Debit,Latitude,Longitude,Confidence,Km from Godown,Google Maps Link
+,7,2607635,JD'S SUPER MARKET,4688.0,,,NOT FOUND,,
+,17,2607645,A ONE ENTERPRISE - SCIENCE CITY,14345.0,,,NOT FOUND,,
+,18,2607646,HAIVA FOOD,1776.0,,,NOT FOUND,,

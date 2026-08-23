@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+body {
+  background: #f9fafb;
+  color: #111827;
+}
+
+/* Leaflet renders above content by default; keep it under modals/toasts. */
+.leaflet-container {
+  z-index: 0;
+}
+.leaflet-pane,
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 0 !important;
+}

@@ -1,0 +1,158 @@
+// Prisma schema — SQLite for local/dev; portable to PostgreSQL by switching
+// the datasource provider. Enums are modelled as validated strings because
+// SQLite does not support native enums; zod enforces values at the API layer.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String
+  phone          String?
+  passwordHash   String
+  role           String // ADMIN | DRIVER
+  status         String    @default("ACTIVE") // ACTIVE | INACTIVE
+  tokenVersion   Int       @default(0)
+  mustChangePassword Boolean @default(false)
+  lastLoginAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  assignedRoutes Route[]              @relation("DriverRoutes")
+  createdRoutes  Route[]              @relation("RouteCreator")
+  auditLogs      AuditLog[]
+  passwordResets PasswordResetToken[]
+  importBatches  ImportBatch[]
+
+  @@index([role, status])
+}
+
+model Shop {
+  id            String    @id @default(cuid())
+  name          String
+  address       String?
+  latitude      Float
+  longitude     Float
+  contactName   String?
+  phone         String?
+  email         String?
+  notes         String?
+  externalRef   String? // e.g. bill/account number from source system
+  status        String    @default("ACTIVE") // ACTIVE | INACTIVE
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  importBatchId String?
+  importBatch   ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  routeStops    RouteStop[]
+
+  @@index([name])
+  @@index([status, deletedAt])
+  @@index([latitude, longitude])
+}
+
+model ImportBatch {
+  id                String   @id @default(cuid())
+  filename          String
+  totalRows         Int
+  imported          Int
+  skippedDuplicates Int
+  invalid           Int
+  errors            String? // JSON array of row-level errors
+  createdById       String
+  createdBy         User     @relation(fields: [createdById], references: [id])
+  createdAt         DateTime @default(now())
+
+  shops Shop[]
+
+  @@index([createdAt])
+}
+
+model Route {
+  id             String    @id @default(cuid())
+  name           String
+  status         String    @default("DRAFT") // DRAFT | ASSIGNED | IN_PROGRESS | COMPLETED | CANCELLED
+  startLat       Float
+  startLng       Float
+  startLabel     String?
+  totalDistanceM Float?
+  totalDurationS Float?
+  geometry       String? // GeoJSON LineString coordinates (road-following path)
+  distanceSource String? // OSRM | HAVERSINE
+  scheduledFor   DateTime?
+  shareToken     String    @unique
+  notes          String?
+
+  driverId    String?
+  driver      User?     @relation("DriverRoutes", fields: [driverId], references: [id], onDelete: SetNull)
+  createdById String
+  createdBy   User      @relation("RouteCreator", fields: [createdById], references: [id])
+  assignedAt  DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  stops RouteStop[]
+
+  @@index([driverId, status])
+  @@index([status, deletedAt])
+  @@index([createdAt])
+}
+
+model RouteStop {
+  id            String    @id @default(cuid())
+  routeId       String
+  route         Route     @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  shopId        String
+  shop          Shop      @relation(fields: [shopId], references: [id])
+  sequence      Int // 1-based visiting order
+  status        String    @default("PENDING") // PENDING | ARRIVED | COMPLETED | SKIPPED
+  legDistanceM  Float? // distance from previous point to this stop
+  legDurationS  Float?
+  arrivedAt     DateTime?
+  completedAt   DateTime?
+  notes         String?
+
+  @@unique([routeId, sequence])
+  @@unique([routeId, shopId])
+  @@index([shopId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String // e.g. auth.login, shop.create, route.assign
+  entity    String?
+  entityId  String?
+  detail    String? // JSON payload of relevant non-sensitive fields
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([entity, entityId])
+}
