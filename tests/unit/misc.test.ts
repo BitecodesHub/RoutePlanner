@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { rateLimit, resetRateLimits } from "@/lib/rate-limit";
 import { secureToken, hashToken, tempPassword } from "@/lib/tokens";
-import { googleMapsRouteUrl, googleMapsStopUrl, fitsSingleNavLink } from "@/lib/nav-links";
+import {
+  googleMapsRouteUrl,
+  googleMapsStopUrl,
+  fitsSingleNavLink,
+  whatsappShareUrl,
+} from "@/lib/nav-links";
 import { solveTsp } from "@/lib/optimizer";
 import { fallbackMatrix } from "@/lib/osrm";
 
@@ -60,6 +65,17 @@ describe("nav-links", () => {
     expect(googleMapsStopUrl({ lat: 23.5, lng: 72.5 })).toContain("destination=23.5%2C72.5");
     expect(fitsSingleNavLink(9)).toBe(true);
     expect(fitsSingleNavLink(10)).toBe(false);
+  });
+
+  it("builds WhatsApp share links with and without a phone number", () => {
+    const withPhone = whatsappShareUrl("+91 90000 00000", "Route: Test\nOpen: http://x/share/t");
+    expect(withPhone).toBe(
+      `https://wa.me/919000000000?text=${encodeURIComponent("Route: Test\nOpen: http://x/share/t")}`,
+    );
+    const withoutPhone = whatsappShareUrl(null, "hello");
+    expect(withoutPhone).toBe("https://wa.me/?text=hello");
+    // Formatting characters in numbers are stripped.
+    expect(whatsappShareUrl("(091) 234-567", "x")).toContain("wa.me/091234567?");
   });
 });
 

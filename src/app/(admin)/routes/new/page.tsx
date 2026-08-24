@@ -18,6 +18,7 @@ import {
   Field,
   Input,
   LoadingBlock,
+  Select,
   Spinner,
   Textarea,
   useToast,
@@ -112,10 +113,37 @@ export default function NewRoutePage() {
   const [scheduledFor, setScheduledFor] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [drivers, setDrivers] = useState<{ id: string; name: string }[]>([]);
+  const [assignDriverId, setAssignDriverId] = useState("");
+  /** Last used starting point, remembered across sessions for one-click reuse. */
+  const [lastStart, setLastStart] = useState<StartPoint | null>(null);
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
   /* --------------------------------- Loaders --------------------------------- */
+
+  // Restore the remembered starting point and load active drivers once.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("rp:lastStart");
+      if (raw) {
+        const p = JSON.parse(raw) as StartPoint;
+        if (typeof p.lat === "number" && typeof p.lng === "number") setLastStart(p);
+      }
+    } catch {
+      /* corrupt storage — ignore */
+    }
+    void (async () => {
+      try {
+        const res = await api<{ items: { id: string; name: string; status: string }[] }>(
+          "/api/drivers",
+        );
+        setDrivers(res.items.filter((d) => d.status === "ACTIVE"));
+      } catch {
+        /* driver list is optional here — assignment also works from the route page */
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (!start) return;
@@ -156,6 +184,12 @@ export default function NewRoutePage() {
     setPreview(null);
     setOrderedIds([]);
     setManualDirty(false);
+    setLastStart(p);
+    try {
+      localStorage.setItem("rp:lastStart", JSON.stringify(p));
+    } catch {
+      /* storage unavailable — feature degrades silently */
+    }
   }, []);
 
   const resolveStart = useCallback(async () => {
@@ -212,6 +246,29 @@ export default function NewRoutePage() {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
+    setPreview(null);
+    setOrderedIds([]);
+    setManualDirty(false);
+  }, []);
+
+  /** Select every shop currently shown (respects the active search filter). */
+  const selectAllShown = useCallback(() => {
+    optimizeSeq.current++;
+    setOptimizing(false);
+    setSelectedIds((prev) => {
+      const merged = new Set(prev);
+      for (const s of shops) merged.add(s.id);
+      return [...merged].slice(0, 200);
+    });
+    setPreview(null);
+    setOrderedIds([]);
+    setManualDirty(false);
+  }, [shops]);
+
+  const clearSelection = useCallback(() => {
+    optimizeSeq.current++;
+    setOptimizing(false);
+    setSelectedIds([]);
     setPreview(null);
     setOrderedIds([]);
     setManualDirty(false);
@@ -290,13 +347,28 @@ export default function NewRoutePage() {
           notes: notes.trim() ? notes.trim() : undefined,
         }),
       });
-      toast("success", "Route created");
+      if (assignDriverId) {
+        try {
+          await api<RouteDto>(`/api/routes/${created.id}/assign`, {
+            method: "POST",
+            body: JSON.stringify({ driverId: assignDriverId }),
+          });
+          toast("success", "Route created and assigned — the driver has been notified");
+        } catch (e) {
+          toast(
+            "error",
+            errMessage(e, "Route was created, but assignment failed — assign it from the route page"),
+          );
+        }
+      } else {
+        toast("success", "Route created");
+      }
       router.push(`/routes/${created.id}`);
     } catch (e) {
       toast("error", errMessage(e, "Failed to save the route"));
       setSaving(false);
     }
-  }, [start, preview, orderedIds, name, manualDirty, scheduledFor, notes, router, toast]);
+  }, [start, preview, orderedIds, name, manualDirty, scheduledFor, notes, assignDriverId, router, toast]);
 
   /* -------------------------------- Derived UI ------------------------------- */
 
@@ -446,9 +518,20 @@ export default function NewRoutePage() {
                     Resolve
                   </Button>
                 </div>
-                <Button variant="ghost" loading={locating} onClick={useMyLocation}>
-                  Use my location
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button variant="ghost" loading={locating} onClick={useMyLocation}>
+                    Use my location
+                  </Button>
+                  {lastStart && (
+                    <button
+                      className="max-w-full truncate rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                      onClick={() => chooseStart(lastStart)}
+                      title="Reuse the starting point from your previous route"
+                    >
+                      Use last: {lastStart.label ?? `${lastStart.lat.toFixed(4)}, ${lastStart.lng.toFixed(4)}`}
+                    </button>
+                  )}
+                </div>
                 {candidates && candidates.length > 0 && (
                   <div className="overflow-hidden rounded-lg border border-gray-200">
                     <p className="border-b border-gray-100 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-500">
@@ -492,6 +575,22 @@ export default function NewRoutePage() {
                 <span className="shrink-0 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
                   {selectedIds.length} selected
                 </span>
+              </div>
+              <div className="flex items-center gap-3 text-xs">
+                <button
+                  className="font-medium text-blue-600 hover:underline disabled:text-gray-300"
+                  disabled={shops.length === 0}
+                  onClick={selectAllShown}
+                >
+                  Select all shown ({shops.length})
+                </button>
+                <button
+                  className="font-medium text-gray-500 hover:underline disabled:text-gray-300"
+                  disabled={selectedIds.length === 0}
+                  onClick={clearSelection}
+                >
+                  Clear
+                </button>
               </div>
               {shopsLoading ? (
                 <LoadingBlock label="Loading shops…" />
@@ -652,16 +751,31 @@ export default function NewRoutePage() {
                   placeholder="Optional notes for the driver…"
                 />
               </Field>
+              <Field label="Assign to driver (optional)">
+                <Select
+                  value={assignDriverId}
+                  onChange={(e) => setAssignDriverId(e.target.value)}
+                >
+                  <option value="">Assign later</option>
+                  {drivers.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
               <Button
                 loading={saving}
                 disabled={!step4Enabled || !name.trim()}
                 onClick={() => void save()}
                 className="w-full"
               >
-                Save route
+                {assignDriverId ? "Save & assign route" : "Save route"}
               </Button>
               <p className="text-xs text-gray-400">
-                You can assign a driver from the route page after saving.
+                {assignDriverId
+                  ? "The driver is notified by email with the route link."
+                  : "You can also assign a driver from the route page after saving."}
               </p>
             </div>
           </StepSection>

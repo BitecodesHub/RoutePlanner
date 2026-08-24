@@ -168,6 +168,10 @@ export default function DriverRoutePage() {
   const scheduled = formatDate(route.scheduledFor);
   const inProgress = route.status === "IN_PROGRESS";
   const allTerminal = route.stops.length > 0 && unfinishedCount === 0;
+  // The first stop that is not finished yet — the driver's next destination.
+  const nextStop = route.stops.find(
+    (s) => s.status === "PENDING" || s.status === "ARRIVED",
+  );
   const mapsUrl = fitsSingleNavLink(route.stops.length)
     ? googleMapsRouteUrl(
         { lat: route.startLat, lng: route.startLng },
@@ -209,6 +213,29 @@ export default function DriverRoutePage() {
         )}
         {inProgress && (
           <>
+            {nextStop && (
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wide text-blue-500">
+                    Next stop
+                  </p>
+                  <p className="truncate text-sm font-semibold text-blue-900">
+                    {nextStop.sequence}. {nextStop.shop.name}
+                  </p>
+                </div>
+                <a
+                  href={googleMapsStopUrl({
+                    lat: nextStop.shop.latitude,
+                    lng: nextStop.shop.longitude,
+                  })}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  Navigate
+                </a>
+              </div>
+            )}
             {allTerminal && (
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
                 All stops are finished — you can complete the route now.

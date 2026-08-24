@@ -39,3 +39,16 @@ export function googleMapsStopUrl(stop: NavPoint): string {
   });
   return `https://www.google.com/maps/dir/?${params.toString()}`;
 }
+
+/**
+ * WhatsApp deep link with a prefilled message. When a phone number is given
+ * the chat opens directly with that contact; otherwise WhatsApp asks the
+ * sender to pick one. Works on mobile and WhatsApp Web without any API.
+ */
+export function whatsappShareUrl(phone: string | null | undefined, text: string): string {
+  const digits = (phone ?? "").replace(/[^0-9]/g, "");
+  const encoded = encodeURIComponent(text);
+  return digits
+    ? `https://wa.me/${digits}?text=${encoded}`
+    : `https://wa.me/?text=${encoded}`;
+}

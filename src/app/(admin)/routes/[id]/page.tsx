@@ -4,7 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api, ClientApiError } from "@/lib/client";
 import { formatDistance, formatDuration } from "@/lib/geo";
-import { fitsSingleNavLink, googleMapsRouteUrl, googleMapsStopUrl } from "@/lib/nav-links";
+import {
+  fitsSingleNavLink,
+  googleMapsRouteUrl,
+  googleMapsStopUrl,
+  whatsappShareUrl,
+} from "@/lib/nav-links";
 import type { DriverDto, RouteDto } from "@/lib/types";
 import {
   Badge,
@@ -247,6 +252,23 @@ export default function RouteDetailPage() {
     );
   }, [route]);
 
+  const whatsappUrl = useMemo(() => {
+    if (!route) return null;
+    const shareUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/share/${route.shareToken}`
+        : `/share/${route.shareToken}`;
+    const parts = [
+      `Route: ${route.name}`,
+      `${route.stops.length} stops` +
+        (route.totalDistanceM != null ? `, ${formatDistance(route.totalDistanceM)}` : "") +
+        (route.totalDurationS != null ? `, approx. ${formatDuration(route.totalDurationS)}` : ""),
+      `Open: ${shareUrl}`,
+    ];
+    // Opens the assigned driver's chat directly when their number is on file.
+    return whatsappShareUrl(route.driver?.phone, parts.join("\n"));
+  }, [route]);
+
   /* ---------------------------------- Render ---------------------------------- */
 
   if (loading) return <LoadingBlock label="Loading route…" />;
@@ -294,6 +316,17 @@ export default function RouteDetailPage() {
             <Button variant="secondary" onClick={() => void copyShareLink()}>
               Copy share link
             </Button>
+            {whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-sm font-medium text-emerald-800 transition-colors hover:bg-emerald-100"
+                title={route.driver ? `Send to ${route.driver.name} on WhatsApp` : "Share via WhatsApp"}
+              >
+                WhatsApp
+              </a>
+            )}
             {route.status === "ASSIGNED" && (
               <Button
                 loading={statusBusy === "IN_PROGRESS"}
