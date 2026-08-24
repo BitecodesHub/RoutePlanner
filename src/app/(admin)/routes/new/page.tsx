@@ -143,7 +143,13 @@ export default function NewRoutePage() {
 
   /* --------------------------------- Actions --------------------------------- */
 
+  // Monotonic token: any selection/start change invalidates in-flight
+  // optimisation responses so a stale result can never overwrite new state.
+  const optimizeSeq = useRef(0);
+
   const chooseStart = useCallback((p: StartPoint) => {
+    optimizeSeq.current++;
+    setOptimizing(false);
     setStart(p);
     setCandidates(null);
     // A new origin invalidates any previous optimisation.
@@ -201,6 +207,8 @@ export default function NewRoutePage() {
 
   /** Toggling a shop invalidates the current optimisation preview. */
   const toggleShop = useCallback((id: string) => {
+    optimizeSeq.current++;
+    setOptimizing(false);
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
@@ -211,6 +219,7 @@ export default function NewRoutePage() {
 
   const optimize = useCallback(async () => {
     if (!start || selectedIds.length === 0) return;
+    const token = ++optimizeSeq.current;
     setOptimizing(true);
     try {
       const ids = preview && orderedIds.length > 0 ? orderedIds : selectedIds;
@@ -221,13 +230,17 @@ export default function NewRoutePage() {
           shopIds: ids,
         }),
       });
+      // Selection changed while the request was in flight — drop the result.
+      if (token !== optimizeSeq.current) return;
       setPreview(res);
       setOrderedIds(res.orderedShopIds);
       setManualDirty(false);
     } catch (e) {
-      toast("error", errMessage(e, "Optimisation failed"));
+      if (token === optimizeSeq.current) {
+        toast("error", errMessage(e, "Optimisation failed"));
+      }
     } finally {
-      setOptimizing(false);
+      if (token === optimizeSeq.current) setOptimizing(false);
     }
   }, [start, selectedIds, preview, orderedIds, toast]);
 
@@ -243,6 +256,8 @@ export default function NewRoutePage() {
   }, []);
 
   const removeStop = useCallback((id: string) => {
+    optimizeSeq.current++;
+    setOptimizing(false);
     setOrderedIds((prev) => {
       const next = prev.filter((x) => x !== id);
       if (next.length === 0) {

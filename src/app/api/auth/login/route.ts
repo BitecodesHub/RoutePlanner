@@ -31,12 +31,18 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   const { email, password } = loginSchema.parse(body);
   const ip = getClientIp(req) ?? "unknown";
 
+  // Two windows: per IP+account and per account alone. The account-only key
+  // cannot be bypassed by spoofing X-Forwarded-For, so a single victim
+  // account can never face unlimited password guesses.
   const limitKey = `login:${ip}:${email.toLowerCase()}`;
-  const limit = rateLimit(limitKey, 5, 15 * 60_000);
-  if (!limit.allowed) {
+  const acctKey = `login-acct:${email.toLowerCase()}`;
+  const perIp = rateLimit(limitKey, 5, 15 * 60_000);
+  const perAccount = rateLimit(acctKey, 15, 15 * 60_000);
+  if (!perIp.allowed || !perAccount.allowed) {
+    const retry = Math.max(perIp.retryAfterSeconds, perAccount.retryAfterSeconds);
     throw new ApiError(
       429,
-      `Too many login attempts. Please try again in ${limit.retryAfterSeconds} seconds.`,
+      `Too many login attempts. Please try again in ${retry} seconds.`,
       "RATE_LIMITED",
     );
   }
@@ -58,6 +64,7 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
 
   // Only failed attempts should count towards the lockout window.
   clearRateLimit(limitKey);
+  clearRateLimit(acctKey);
 
   await prisma.user.update({
     where: { id: user.id },

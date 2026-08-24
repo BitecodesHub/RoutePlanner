@@ -52,7 +52,23 @@ export const POST = withErrorHandling(async (req: NextRequest, ctx: Ctx) => {
   if (to === "IN_PROGRESS" && !route.startedAt) data.startedAt = new Date();
   if (to === "COMPLETED") data.completedAt = new Date();
 
-  await prisma.route.update({ where: { id: route.id }, data });
+  if (from === "CANCELLED" && to === "DRAFT") {
+    // Reopening returns the route to a clean draft: no stale assignment,
+    // timestamps, or stop progress from the cancelled run.
+    data.driver = { disconnect: true };
+    data.assignedAt = null;
+    data.startedAt = null;
+    data.completedAt = null;
+    await prisma.$transaction([
+      prisma.route.update({ where: { id: route.id }, data }),
+      prisma.routeStop.updateMany({
+        where: { routeId: route.id },
+        data: { status: "PENDING", arrivedAt: null, completedAt: null },
+      }),
+    ]);
+  } else {
+    await prisma.route.update({ where: { id: route.id }, data });
+  }
 
   // Notify the other party on terminal transitions.
   if (to === "COMPLETED" || to === "CANCELLED") {

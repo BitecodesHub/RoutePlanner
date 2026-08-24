@@ -75,6 +75,26 @@ describe("solveTsp", () => {
     expect(totalCost).toBeLessThan(naive * 0.7);
   });
 
+  it("stays consistent and near-optimal on asymmetric (road-like) matrices", () => {
+    // Road duration matrices are asymmetric: one-way systems, turn costs.
+    for (let trial = 0; trial < 5; trial++) {
+      const n = 7;
+      const rand = (i: number, j: number) =>
+        1000 + 900 * Math.abs(Math.sin(trial * 131 + i * 17.3 + j * 7.9));
+      const matrix = Array.from({ length: n }, (_, i) =>
+        Array.from({ length: n }, (_, j) => (i === j ? 0 : rand(i, j))),
+      );
+      const { order, totalCost } = solveTsp(matrix);
+      expect(order).toHaveLength(n - 1);
+      expect(new Set(order).size).toBe(n - 1);
+      // Reported cost must equal the true cost of the returned tour.
+      expect(tourCost([0, ...order], matrix)).toBeCloseTo(totalCost, 6);
+      // And be close to the brute-force optimum.
+      const optimal = bruteForceBest(matrix);
+      expect(totalCost).toBeLessThanOrEqual(optimal * 1.15 + 1);
+    }
+  });
+
   it("solves 100 stops in reasonable time", () => {
     const points: LatLng[] = Array.from({ length: 101 }, (_, i) => ({
       lat: 23 + Math.sin(i * 12.9898) * 0.2,

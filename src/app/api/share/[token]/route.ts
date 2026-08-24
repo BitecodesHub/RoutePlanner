@@ -21,9 +21,18 @@ export const GET = withErrorHandling(async (_req: NextRequest, ctx: Ctx) => {
 
   const dto = routeToDto(route);
   dto.driver = dto.driver ? { id: "", name: dto.driver.name, email: "", phone: null } : null;
+  // Redact everything the share page does not need for navigation: contact
+  // details and source-system references stay private.
   dto.stops = dto.stops.map((st) => ({
     ...st,
-    shop: { ...st.shop, notes: null, email: null },
+    shop: {
+      ...st.shop,
+      notes: null,
+      email: null,
+      phone: null,
+      contactName: null,
+      externalRef: null,
+    },
   }));
 
   return NextResponse.json(dto);

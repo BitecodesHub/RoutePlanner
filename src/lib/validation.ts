@@ -32,20 +32,20 @@ export const shopListQuerySchema = z.object({
 
 export const driverCreateSchema = z.object({
   name: z.string().trim().min(1).max(200),
-  email: z.string().trim().email().max(200),
+  email: z.string().trim().toLowerCase().email().max(200),
   phone: z.string().trim().max(30).optional().nullable(),
   password: z.string().min(8).max(100).optional(), // omit to auto-generate
 });
 
 export const driverUpdateSchema = z.object({
   name: z.string().trim().min(1).max(200).optional(),
-  email: z.string().trim().email().max(200).optional(),
+  email: z.string().trim().toLowerCase().email().max(200).optional(),
   phone: z.string().trim().max(30).optional().nullable(),
   status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
 });
 
 export const loginSchema = z.object({
-  email: z.string().trim().email().max(200),
+  email: z.string().trim().toLowerCase().email().max(200),
   password: z.string().min(1).max(100),
 });
 
@@ -55,7 +55,7 @@ export const changePasswordSchema = z.object({
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().trim().email().max(200),
+  email: z.string().trim().toLowerCase().email().max(200),
 });
 
 export const resetPasswordSchema = z.object({

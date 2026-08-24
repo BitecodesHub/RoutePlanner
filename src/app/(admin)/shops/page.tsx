@@ -170,6 +170,12 @@ function ShopFormModal({
   };
 
   const save = async (force: boolean) => {
+    // Never build the payload from coordinates that a pasted Maps link is
+    // still about to overwrite.
+    if (resolving) {
+      toast("info", "Wait a moment — the pasted location is still resolving");
+      return;
+    }
     if (!validate()) return;
     setSaving(true);
     setDuplicateWarning(null);
@@ -325,7 +331,7 @@ function ShopFormModal({
           <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button type="submit" loading={saving}>
+          <Button type="submit" loading={saving} disabled={resolving}>
             {shop ? "Save changes" : "Create shop"}
           </Button>
         </div>

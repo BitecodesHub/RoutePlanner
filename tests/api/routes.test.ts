@@ -199,7 +199,14 @@ describe("route lifecycle", () => {
       expect(r.body.driver.phone ?? null).toBeNull();
     }
     for (const stop of r.body.stops) {
+      // Full CRM redaction: only navigation data survives.
       expect(stop.shop.email ?? null).toBeNull();
+      expect(stop.shop.notes ?? null).toBeNull();
+      expect(stop.shop.phone ?? null).toBeNull();
+      expect(stop.shop.contactName ?? null).toBeNull();
+      expect(stop.shop.externalRef ?? null).toBeNull();
+      expect(stop.shop.name).toBeTruthy();
+      expect(typeof stop.shop.latitude).toBe("number");
     }
   });
 
@@ -208,17 +215,23 @@ describe("route lifecycle", () => {
     expect(r.status).toBe(404);
   });
 
-  it("cancel and reopen transitions work for admins", async () => {
+  it("cancel and reopen transitions work for admins, and reopen resets state", async () => {
     const r2 = await c.post("/api/routes", {
       name: "Cancel Me",
       start: START,
       shopIds: shopIds.slice(0, 2),
     });
     const id = r2.body.id;
+    await c.post(`/api/routes/${id}/assign`, { driverId });
     const cancel = await c.post(`/api/routes/${id}/status`, { status: "CANCELLED" });
     expect(cancel.status).toBe(200);
     const reopen = await c.post(`/api/routes/${id}/status`, { status: "DRAFT" });
     expect(reopen.status).toBe(200);
+    // A reopened route is a clean draft: no stale driver or timestamps.
+    expect(reopen.body.driver).toBeNull();
+    expect(reopen.body.assignedAt).toBeNull();
+    expect(reopen.body.startedAt).toBeNull();
+    expect(reopen.body.stops.every((s: { status: string }) => s.status === "PENDING")).toBe(true);
     await c.delete(`/api/routes/${id}`);
   });
 

@@ -488,8 +488,8 @@ export default function RouteDetailPage() {
                 {route.status === "CANCELLED" && (
                   <Button
                     variant="secondary"
-                    loading={statusBusy === "DRAFT" || statusBusy === "ASSIGNED"}
-                    onClick={() => void setStatus(route.driver ? "ASSIGNED" : "DRAFT")}
+                    loading={statusBusy === "DRAFT"}
+                    onClick={() => void setStatus("DRAFT")}
                   >
                     Reopen
                   </Button>

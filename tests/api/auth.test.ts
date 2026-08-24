@@ -33,6 +33,15 @@ describe("login", () => {
     expect(r.status).toBe(400);
   });
 
+  it("treats emails case-insensitively", async () => {
+    const r = await anon().post("/api/auth/login", {
+      email: "ADMIN@Test.Local",
+      password: "AdminTest@123",
+    });
+    expect(r.status).toBe(200);
+    expect(r.body.email).toBe("admin@test.local");
+  });
+
   it("succeeds with correct credentials and sets a session cookie", async () => {
     const c = anon();
     const r = await c.post("/api/auth/login", {

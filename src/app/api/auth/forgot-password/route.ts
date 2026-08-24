@@ -21,8 +21,11 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   const { email } = forgotPasswordSchema.parse(body);
   const ip = getClientIp(req) ?? "unknown";
 
-  const limit = rateLimit(`forgot:${ip}:${email.toLowerCase()}`, 3, 15 * 60_000);
-  if (!limit.allowed) {
+  // Two windows: per IP+account, and per account alone. The second cannot be
+  // bypassed by spoofing X-Forwarded-For, capping reset-mail flooding.
+  const perIp = rateLimit(`forgot:${ip}:${email.toLowerCase()}`, 3, 15 * 60_000);
+  const perAccount = rateLimit(`forgot-acct:${email.toLowerCase()}`, 5, 15 * 60_000);
+  if (!perIp.allowed || !perAccount.allowed) {
     // Silently drop the request: same response shape, no work performed.
     return NextResponse.json({ ok: true });
   }

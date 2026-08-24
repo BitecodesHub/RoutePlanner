@@ -101,12 +101,19 @@ export const PATCH = withErrorHandling(async (req: NextRequest, ctx: Ctx) => {
 export const DELETE = withErrorHandling(async (req: NextRequest, ctx: Ctx) => {
   const admin = await requireRole("ADMIN");
   const { id } = await ctx.params;
-  await findDriverOr404(id);
+  const driver = await findDriverOr404(id);
 
   await prisma.$transaction([
     prisma.user.update({
       where: { id },
-      data: { deletedAt: new Date(), status: "INACTIVE", tokenVersion: { increment: 1 } },
+      data: {
+        deletedAt: new Date(),
+        status: "INACTIVE",
+        tokenVersion: { increment: 1 },
+        // Free the address for future accounts — the global unique index
+        // also covers soft-deleted rows. Original is kept in the audit log.
+        email: `deleted-${id}-${driver.email}`,
+      },
     }),
     // Unassign routes that have not started yet; keep IN_PROGRESS/COMPLETED history intact.
     prisma.route.updateMany({
@@ -120,6 +127,7 @@ export const DELETE = withErrorHandling(async (req: NextRequest, ctx: Ctx) => {
     action: "driver.delete",
     entity: "User",
     entityId: id,
+    detail: { email: driver.email },
     ip: getClientIp(req),
   });
 

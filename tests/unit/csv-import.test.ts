@@ -79,6 +79,25 @@ Far Shop X,23.5,72.9,`;
     const r = parseShopsCsv("");
     expect(r.valid).toHaveLength(0);
   });
+
+  it("does not collapse distinct non-Latin names into duplicates", () => {
+    const csv = `Name,Latitude,Longitude
+શ્રી ગણેશ સ્ટોર,23.06,72.51
+શ્રી કૃષ્ણ ડેરી,23.0601,72.5101
+पटेल किराना,23.0602,72.5102`;
+    const r = parseShopsCsv(csv);
+    expect(r.valid).toHaveLength(3);
+    expect(r.duplicatesInFile).toHaveLength(0);
+  });
+
+  it("still detects duplicates for identical non-Latin names nearby", () => {
+    const csv = `Name,Latitude,Longitude
+શ્રી ગણેશ સ્ટોર,23.06,72.51
+શ્રી ગણેશ સ્ટોર,23.06001,72.51001`;
+    const r = parseShopsCsv(csv);
+    expect(r.valid).toHaveLength(1);
+    expect(r.duplicatesInFile).toHaveLength(1);
+  });
 });
 
 describe("partitionAgainstExisting", () => {

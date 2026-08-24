@@ -104,6 +104,20 @@ describe("driver lifecycle", () => {
     expect(items.some((d: { id: string }) => d.id === driverId)).toBe(false);
   });
 
+  it("frees the email address after deletion so the driver can be re-created", async () => {
+    const r = await c.post("/api/drivers", {
+      name: "Lifecycle Reborn",
+      email: "lifecycle@test.local",
+      password: "Reborn@12345",
+    });
+    expect(r.status).toBe(201);
+    const login = await anon().post("/api/auth/login", {
+      email: "lifecycle@test.local",
+      password: "Reborn@12345",
+    });
+    expect(login.status).toBe(200);
+  });
+
   it("accepts an explicit password on creation", async () => {
     const r = await c.post("/api/drivers", {
       name: "Explicit Password",

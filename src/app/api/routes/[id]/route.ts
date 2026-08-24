@@ -102,6 +102,16 @@ export const PATCH = withErrorHandling(async (req: NextRequest, ctx: Ctx) => {
     data.distanceSource = built.distanceSource;
 
     await prisma.$transaction(async (tx) => {
+      // Re-verify the editability guard inside the transaction: buildRoute
+      // awaits slow external calls, so the pre-check above may be stale
+      // (e.g. the driver started the route in the meantime).
+      const { count } = await tx.route.updateMany({
+        where: { id: route.id, status: { in: ["DRAFT", "ASSIGNED"] }, deletedAt: null },
+        data: data as Prisma.RouteUpdateManyMutationInput,
+      });
+      if (count === 0) {
+        throw new ApiError(409, "Only draft or assigned routes can be edited", "ROUTE_LOCKED");
+      }
       await tx.routeStop.deleteMany({ where: { routeId: route.id } });
       // Fresh PENDING stops — editing a route restarts its plan.
       await tx.routeStop.createMany({
@@ -113,10 +123,15 @@ export const PATCH = withErrorHandling(async (req: NextRequest, ctx: Ctx) => {
           legDurationS: st.legDurationS,
         })),
       });
-      await tx.route.update({ where: { id: route.id }, data });
     });
   } else {
-    await prisma.route.update({ where: { id: route.id }, data });
+    const { count } = await prisma.route.updateMany({
+      where: { id: route.id, status: { in: ["DRAFT", "ASSIGNED"] }, deletedAt: null },
+      data: data as Prisma.RouteUpdateManyMutationInput,
+    });
+    if (count === 0) {
+      throw new ApiError(409, "Only draft or assigned routes can be edited", "ROUTE_LOCKED");
+    }
   }
 
   await audit({

@@ -67,7 +67,15 @@ function cleanCell(v: unknown): string {
 }
 
 export function normalizeShopName(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
+  // Unicode-aware: keep letters and digits in any script, drop separators,
+  // punctuation, and symbols. Falls back to the trimmed lowercase name so a
+  // fully non-alphanumeric name never collapses to the empty string (which
+  // would make all such names "duplicates" of each other).
+  const key = name
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu, "");
+  return key || name.trim().toLowerCase();
 }
 
 const DUPLICATE_RADIUS_M = 50;

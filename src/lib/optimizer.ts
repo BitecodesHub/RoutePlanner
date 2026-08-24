@@ -48,7 +48,13 @@ function nearestNeighborTour(matrix: number[][]): number[] {
   return tour;
 }
 
-/** 2-opt: reverse tour[i..k] when it shortens the cycle. Depot stays fixed. */
+/**
+ * 2-opt: reverse tour[i..k] when it shortens the cycle. Depot stays fixed.
+ * Road matrices are asymmetric (m[i][j] !== m[j][i]), so the cheap boundary
+ * delta is only a filter; a move is accepted on its exact delta, which also
+ * prices the reversed internal arcs. This keeps every accepted move a strict
+ * improvement, guaranteeing monotone convergence.
+ */
 function twoOptPass(tour: number[], matrix: number[][]): boolean {
   const n = tour.length;
   let improved = false;
@@ -58,7 +64,13 @@ function twoOptPass(tour: number[], matrix: number[][]): boolean {
       const b = tour[i];
       const c = tour[k];
       const d = tour[(k + 1) % n];
-      const delta = matrix[a][c] + matrix[b][d] - (matrix[a][b] + matrix[c][d]);
+      const boundaryDelta = matrix[a][c] + matrix[b][d] - (matrix[a][b] + matrix[c][d]);
+      if (boundaryDelta >= -1e-9) continue;
+      let reversalDelta = 0;
+      for (let t = i; t < k; t++) {
+        reversalDelta += matrix[tour[t + 1]][tour[t]] - matrix[tour[t]][tour[t + 1]];
+      }
+      const delta = boundaryDelta + reversalDelta;
       if (delta < -1e-9) {
         let lo = i;
         let hi = k;
