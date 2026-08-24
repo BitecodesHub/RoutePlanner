@@ -8,12 +8,14 @@ import type { SessionDto } from "@/lib/types";
 
 function ProductMark() {
   return (
-    <div className="flex items-center justify-center gap-2.5">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-lg font-bold text-white shadow-sm">
-        R
+    <div className="flex items-center justify-center gap-3">
+      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-ink text-white">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 20a2 2 0 100-4 2 2 0 000 4zm12-12a2 2 0 100-4 2 2 0 000 4zM8 18h7a4 4 0 000-8H9a4 4 0 010-4" />
+        </svg>
       </div>
-      <span className="text-xl font-semibold tracking-tight text-gray-900">
-        RoutePilot
+      <span className="text-[22px] font-bold tracking-tight text-ink">
+        ROUTE<span className="text-brand">PILOT</span>
       </span>
     </div>
   );
@@ -206,7 +208,7 @@ function LoginInner() {
             <div className="text-center">
               <button
                 type="button"
-                className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                className="text-sm font-medium text-brand hover:text-brand-strong"
                 onClick={() => {
                   setShowForgot((v) => !v);
                   setForgotSent(false);

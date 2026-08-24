@@ -308,7 +308,7 @@ export default function RouteDetailPage() {
                 href={mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-50"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4.5 py-2 text-sm font-medium text-ink transition-colors hover:bg-black/[0.03]"
               >
                 Open in Google Maps
               </a>
@@ -321,7 +321,7 @@ export default function RouteDetailPage() {
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-sm font-medium text-emerald-800 transition-colors hover:bg-emerald-100"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-4.5 py-2 text-sm font-medium text-emerald-800 transition-colors hover:bg-emerald-100"
                 title={route.driver ? `Send to ${route.driver.name} on WhatsApp` : "Share via WhatsApp"}
               >
                 WhatsApp
@@ -398,7 +398,7 @@ export default function RouteDetailPage() {
                             })}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center rounded p-1.5 text-blue-600 hover:bg-blue-50"
+                            className="inline-flex items-center justify-center rounded p-1.5 text-brand hover:bg-brand-soft"
                             aria-label={`Navigate to ${stop.shop.name}`}
                             title="Open in Google Maps"
                           >
@@ -552,7 +552,7 @@ export default function RouteDetailPage() {
                       const shop = shopById.get(shopId);
                       return (
                         <li key={shopId} className="flex items-center gap-2.5 px-3 py-2">
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
                             {i + 1}
                           </span>
                           <span className="min-w-0 flex-1 truncate text-sm text-gray-900">

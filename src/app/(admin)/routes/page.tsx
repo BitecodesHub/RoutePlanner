@@ -37,12 +37,12 @@ function LinkButton({
 }) {
   const styles =
     variant === "primary"
-      ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-      : "bg-white text-gray-800 border border-gray-300 hover:bg-gray-50";
+      ? "bg-brand text-white hover:bg-brand-strong shadow-sm"
+      : "bg-white text-ink border border-black/10 hover:bg-black/[0.03]";
   return (
     <Link
       href={href}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${styles}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-full px-4.5 py-2 text-sm font-medium transition-colors ${styles}`}
     >
       {children}
     </Link>
@@ -178,7 +178,7 @@ export default function RoutesPage() {
                       <td className="px-5 py-3">
                         <Link
                           href={`/routes/${route.id}`}
-                          className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                          className="font-medium text-brand hover:text-brand-strong hover:underline"
                         >
                           {route.name}
                         </Link>

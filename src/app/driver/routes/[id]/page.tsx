@@ -38,7 +38,7 @@ function NavLinkButton({ href, children }: { href: string; children: React.React
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-50"
+      className="inline-flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4.5 py-2 text-sm font-medium text-ink transition-colors hover:bg-black/[0.03]"
     >
       {children}
     </a>
@@ -214,12 +214,12 @@ export default function DriverRoutePage() {
         {inProgress && (
           <>
             {nextStop && (
-              <div className="flex items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-brand/25 bg-brand-soft px-4 py-3">
                 <div className="min-w-0">
-                  <p className="text-xs font-medium uppercase tracking-wide text-blue-500">
+                  <p className="text-xs font-medium uppercase tracking-wide text-brand">
                     Next stop
                   </p>
-                  <p className="truncate text-sm font-semibold text-blue-900">
+                  <p className="truncate text-sm font-semibold text-ink">
                     {nextStop.sequence}. {nextStop.shop.name}
                   </p>
                 </div>
@@ -230,7 +230,7 @@ export default function DriverRoutePage() {
                   })}
                   target="_blank"
                   rel="noreferrer"
-                  className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                  className="shrink-0 rounded-full bg-brand px-4.5 py-2 text-sm font-medium text-white hover:bg-brand-strong"
                 >
                   Navigate
                 </a>
@@ -255,7 +255,7 @@ export default function DriverRoutePage() {
             href={mapsUrl}
             target="_blank"
             rel="noreferrer"
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-50"
+            className="flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4.5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-black/[0.03]"
           >
             Open full route in Google Maps
           </a>
@@ -292,7 +292,7 @@ export default function DriverRoutePage() {
                     className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
                       done
                         ? "bg-emerald-100 text-emerald-700"
-                        : "bg-blue-50 text-blue-700"
+                        : "bg-brand-soft text-brand-strong"
                     }`}
                   >
                     {done ? (
@@ -315,7 +315,7 @@ export default function DriverRoutePage() {
                       {stop.shop.phone && (
                         <a
                           href={`tel:${stop.shop.phone}`}
-                          className="font-medium text-blue-600 hover:text-blue-700"
+                          className="font-medium text-brand hover:text-brand-strong"
                         >
                           {stop.shop.phone}
                         </a>

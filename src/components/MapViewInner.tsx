@@ -27,7 +27,7 @@ export interface MapViewProps {
 const markerColors: Record<MapMarker["kind"], string> = {
   start: "#059669",
   shop: "#6b7280",
-  selected: "#2563eb",
+  selected: "#f4512c",
 };
 
 function makeIcon(marker: MapMarker): L.DivIcon {
@@ -72,7 +72,7 @@ export default function MapViewInner({
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {polyline && polyline.length > 1 && (
-          <Polyline positions={polyline} pathOptions={{ color: "#2563eb", weight: 4, opacity: 0.75 }} />
+          <Polyline positions={polyline} pathOptions={{ color: "#f4512c", weight: 4, opacity: 0.75 }} />
         )}
         {markers.map((m) => (
           <Marker

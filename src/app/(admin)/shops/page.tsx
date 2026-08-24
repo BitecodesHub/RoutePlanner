@@ -410,8 +410,8 @@ function ImportModal({
             onClick={() => fileInputRef.current?.click()}
             className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors ${
               dragging
-                ? "border-blue-400 bg-blue-50"
-                : "border-gray-300 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50"
+                ? "border-brand bg-brand-soft"
+                : "border-gray-300 bg-gray-50 hover:border-brand/40 hover:bg-brand-soft/60"
             }`}
           >
             <svg

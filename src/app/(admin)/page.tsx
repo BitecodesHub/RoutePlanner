@@ -72,12 +72,12 @@ function LinkButton({
 }) {
   const styles =
     variant === "primary"
-      ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-      : "bg-white text-gray-800 border border-gray-300 hover:bg-gray-50";
+      ? "bg-brand text-white hover:bg-brand-strong shadow-sm"
+      : "bg-white text-ink border border-black/10 hover:bg-black/[0.03]";
   return (
     <Link
       href={href}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${styles}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-full px-4.5 py-2 text-sm font-medium transition-colors ${styles}`}
     >
       {children}
     </Link>
@@ -86,7 +86,7 @@ function LinkButton({
 
 function StatIcon({ d }: { d: string }) {
   return (
-    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
       <svg
         width="18"
         height="18"
@@ -108,8 +108,8 @@ function StatCard({ label, value, icon }: { label: string; value: number; icon: 
     <Card className="flex-1">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-2xl font-semibold text-gray-900">{value}</p>
-          <p className="mt-0.5 text-xs font-medium text-gray-500">{label}</p>
+          <p className="text-[32px] font-semibold leading-none tracking-tight text-ink">{value}</p>
+          <p className="mt-2 text-[13px] text-muted">{label}</p>
         </div>
         <StatIcon d={icon} />
       </div>
@@ -147,12 +147,9 @@ export default function DashboardPage() {
         title="Dashboard"
         description="Operational overview"
         actions={
-          <>
-            <LinkButton href="/shops?import=1" variant="secondary">
-              Import shops
-            </LinkButton>
-            <LinkButton href="/routes/new">New route</LinkButton>
-          </>
+          <LinkButton href="/shops?import=1" variant="secondary">
+            Import shops
+          </LinkButton>
         }
       />
 
@@ -228,7 +225,7 @@ export default function DashboardPage() {
                           <td className="px-5 py-3">
                             <Link
                               href={`/routes/${route.id}`}
-                              className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                              className="font-medium text-brand hover:text-brand-strong hover:underline"
                             >
                               {route.name}
                             </Link>

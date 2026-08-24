@@ -19,11 +19,11 @@ type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
 
 const buttonStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300 shadow-sm",
+    "bg-brand text-white hover:bg-brand-strong disabled:bg-brand/40 shadow-[0_1px_8px_rgba(244,81,44,0.25)]",
   secondary:
-    "bg-white text-gray-800 border border-gray-300 hover:bg-gray-50 disabled:text-gray-400",
-  danger: "bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300 shadow-sm",
-  ghost: "text-gray-600 hover:bg-gray-100 disabled:text-gray-300",
+    "bg-white text-ink border border-black/10 hover:bg-black/[0.03] disabled:text-faint",
+  danger: "bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300",
+  ghost: "text-muted hover:bg-black/5 hover:text-ink disabled:text-gray-300",
 };
 
 export function Button({
@@ -39,7 +39,7 @@ export function Button({
 }) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed ${buttonStyles[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-full px-4.5 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed ${buttonStyles[variant]} ${className}`}
       disabled={disabled || loading}
       {...rest}
     >
@@ -52,7 +52,7 @@ export function Button({
 /* --------------------------------- Inputs -------------------------------- */
 
 const inputBase =
-  "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 disabled:bg-gray-50";
+  "w-full rounded-xl border border-black/10 bg-white px-3.5 py-2 text-sm text-ink placeholder:text-faint focus:border-brand/60 focus:outline-none focus:ring-4 focus:ring-brand/10 disabled:bg-gray-50 transition-shadow";
 
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   const { className = "", ...rest } = props;
@@ -112,10 +112,12 @@ export function Card({
   padded?: boolean;
 }) {
   return (
-    <div className={`rounded-xl border border-gray-200 bg-white shadow-sm ${className}`}>
+    <div
+      className={`rounded-[18px] border border-black/[0.05] bg-white shadow-[0_2px_14px_rgba(0,0,0,0.04)] ${className}`}
+    >
       {(title || actions) && (
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3.5">
-          <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+        <div className="flex items-center justify-between border-b border-black/[0.05] px-5 py-3.5">
+          <h3 className="text-sm font-semibold text-ink">{title}</h3>
           {actions}
         </div>
       )}
@@ -157,7 +159,7 @@ export function Badge({ value, className = "" }: { value: string; className?: st
 export function Spinner({ size = 20, light = false }: { size?: number; light?: boolean }) {
   return (
     <svg
-      className={`animate-spin ${light ? "text-white" : "text-blue-600"}`}
+      className={`animate-spin ${light ? "text-white" : "text-brand"}`}
       width={size}
       height={size}
       viewBox="0 0 24 24"
@@ -233,15 +235,15 @@ export function Modal({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-gray-900/50 p-4 pt-16">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 pt-16 backdrop-blur-sm">
       <div
-        className={`w-full ${wide ? "max-w-3xl" : "max-w-lg"} rounded-xl bg-white shadow-xl`}
+        className={`w-full ${wide ? "max-w-3xl" : "max-w-lg"} rounded-[20px] bg-white shadow-2xl`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
       >
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3.5">
-          <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+        <div className="flex items-center justify-between border-b border-black/[0.05] px-5 py-3.5">
+          <h3 className="text-sm font-semibold text-ink">{title}</h3>
           <button
             onClick={onClose}
             className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
@@ -317,10 +319,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setTimeout(() => setItems((prev) => prev.filter((t) => t.id !== id)), 4500);
   }, []);
 
-  const palette = {
-    success: "border-emerald-200 bg-emerald-50 text-emerald-800",
-    error: "border-red-200 bg-red-50 text-red-800",
-    info: "border-blue-200 bg-blue-50 text-blue-800",
+  const dot = {
+    success: "bg-emerald-500",
+    error: "bg-red-500",
+    info: "bg-brand",
   } as const;
 
   return (
@@ -330,9 +332,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {items.map((t) => (
           <div
             key={t.id}
-            className={`pointer-events-auto rounded-lg border px-4 py-3 text-sm shadow-md ${palette[t.kind]}`}
+            className="pointer-events-auto flex items-start gap-2.5 rounded-2xl border border-black/[0.06] bg-white/95 px-4 py-3 text-sm text-ink shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur"
             role="status"
           >
+            <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${dot[t.kind]}`} />
             {t.message}
           </div>
         ))}
@@ -357,7 +360,7 @@ export function Pagination({
   const pages = Math.max(1, Math.ceil(total / pageSize));
   if (pages <= 1) return null;
   return (
-    <div className="flex items-center justify-between border-t border-gray-100 px-5 py-3 text-sm text-gray-600">
+    <div className="flex items-center justify-between border-t border-black/[0.05] px-5 py-3 text-sm text-gray-600">
       <span>
         Page {page} of {pages} · {total} total
       </span>

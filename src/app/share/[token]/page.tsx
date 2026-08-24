@@ -71,7 +71,7 @@ export default function SharedRoutePage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-gray-100 p-6">
         <div className="max-w-sm text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-lg font-bold text-white shadow-sm">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand text-lg font-bold text-white shadow-sm">
             R
           </div>
           <h1 className="text-base font-semibold text-gray-900">
@@ -103,38 +103,40 @@ export default function SharedRoutePage() {
   const driverFirstName = route.driver?.name.split(" ")[0] ?? null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-canvas">
       {/* Slim top bar */}
-      <header className="sticky top-0 z-40 flex items-center gap-3 bg-slate-900 px-4 py-3 md:px-8">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white">
-          R
+      <header className="sticky top-0 z-40 flex items-center gap-3 bg-canvas/75 px-4 py-3.5 backdrop-blur-xl md:px-8">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-white">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 20a2 2 0 100-4 2 2 0 000 4zm12-12a2 2 0 100-4 2 2 0 000 4zM8 18h7a4 4 0 000-8H9a4 4 0 010-4" />
+          </svg>
         </div>
-        <span className="truncate text-sm font-semibold text-white">{route.name}</span>
+        <span className="truncate text-sm font-semibold text-ink">{route.name}</span>
         <Badge value={route.status} className="ml-auto shrink-0" />
       </header>
 
       <main className="mx-auto max-w-3xl space-y-5 px-4 py-6">
         {/* Totals strip */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-3 text-center shadow-sm">
+          <div className="rounded-2xl border border-black/[0.05] bg-white p-3 text-center shadow-[0_2px_14px_rgba(0,0,0,0.04)]">
             <p className="text-lg font-semibold text-gray-900">{route.stops.length}</p>
             <p className="text-xs text-gray-500">
               {route.stops.length === 1 ? "Stop" : "Stops"}
             </p>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-3 text-center shadow-sm">
+          <div className="rounded-2xl border border-black/[0.05] bg-white p-3 text-center shadow-[0_2px_14px_rgba(0,0,0,0.04)]">
             <p className="text-lg font-semibold text-gray-900">
               {route.totalDistanceM != null ? formatDistance(route.totalDistanceM) : "—"}
             </p>
             <p className="text-xs text-gray-500">Distance</p>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-3 text-center shadow-sm">
+          <div className="rounded-2xl border border-black/[0.05] bg-white p-3 text-center shadow-[0_2px_14px_rgba(0,0,0,0.04)]">
             <p className="text-lg font-semibold text-gray-900">
               {route.totalDurationS != null ? formatDuration(route.totalDurationS) : "—"}
             </p>
             <p className="text-xs text-gray-500">Duration</p>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-3 text-center shadow-sm">
+          <div className="rounded-2xl border border-black/[0.05] bg-white p-3 text-center shadow-[0_2px_14px_rgba(0,0,0,0.04)]">
             <p className="text-lg font-semibold text-gray-900">{scheduled ?? "—"}</p>
             <p className="text-xs text-gray-500">Scheduled</p>
           </div>
@@ -161,7 +163,7 @@ export default function SharedRoutePage() {
             href={mapsUrl}
             target="_blank"
             rel="noreferrer"
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3.5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-brand px-4.5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-strong"
           >
             Open in Google Maps
           </a>
@@ -179,7 +181,7 @@ export default function SharedRoutePage() {
           <ul className="divide-y divide-gray-100">
             {route.stops.map((stop) => (
               <li key={stop.id} className="flex items-center gap-3 px-5 py-3">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-700">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-soft text-xs font-bold text-brand-strong">
                   {stop.sequence}
                 </div>
                 <div className="min-w-0 flex-1">

@@ -8,12 +8,14 @@ import { api, ClientApiError } from "@/lib/client";
 
 function ProductMark() {
   return (
-    <div className="flex items-center justify-center gap-2.5">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-lg font-bold text-white shadow-sm">
-        R
+    <div className="flex items-center justify-center gap-3">
+      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-ink text-white">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 20a2 2 0 100-4 2 2 0 000 4zm12-12a2 2 0 100-4 2 2 0 000 4zM8 18h7a4 4 0 000-8H9a4 4 0 010-4" />
+        </svg>
       </div>
-      <span className="text-xl font-semibold tracking-tight text-gray-900">
-        RoutePilot
+      <span className="text-[22px] font-bold tracking-tight text-ink">
+        ROUTE<span className="text-brand">PILOT</span>
       </span>
     </div>
   );
@@ -103,7 +105,7 @@ function ResetPasswordInner() {
             {!token && (
               <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
                 This reset link is invalid or incomplete. Request a new one from the{" "}
-                <Link href="/login" className="font-medium text-blue-600 hover:text-blue-700">
+                <Link href="/login" className="font-medium text-brand hover:text-brand-strong">
                   sign in page
                 </Link>
                 .
@@ -112,7 +114,7 @@ function ResetPasswordInner() {
             {error && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                 {error}{" "}
-                <Link href="/login" className="font-medium text-blue-600 hover:text-blue-700">
+                <Link href="/login" className="font-medium text-brand hover:text-brand-strong">
                   Back to sign in
                 </Link>
               </div>
@@ -143,7 +145,7 @@ function ResetPasswordInner() {
               Reset password
             </Button>
             <p className="text-center text-sm">
-              <Link href="/login" className="font-medium text-blue-600 hover:text-blue-700">
+              <Link href="/login" className="font-medium text-brand hover:text-brand-strong">
                 Back to sign in
               </Link>
             </p>

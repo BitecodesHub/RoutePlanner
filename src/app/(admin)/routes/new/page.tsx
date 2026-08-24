@@ -63,7 +63,7 @@ function StepSection({
             done
               ? "bg-emerald-600 text-white"
               : enabled
-                ? "bg-blue-600 text-white"
+                ? "bg-brand text-white"
                 : "bg-gray-200 text-gray-500"
           }`}
         >
@@ -487,7 +487,7 @@ export default function NewRoutePage() {
                   </p>
                 </div>
                 <button
-                  className="shrink-0 text-sm font-medium text-blue-600 hover:underline"
+                  className="shrink-0 text-sm font-medium text-brand hover:underline"
                   onClick={() => {
                     setStart(null);
                     setPreview(null);
@@ -524,7 +524,7 @@ export default function NewRoutePage() {
                   </Button>
                   {lastStart && (
                     <button
-                      className="max-w-full truncate rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                      className="max-w-full truncate rounded-full border border-brand/25 bg-brand-soft px-3 py-1.5 text-xs font-medium text-brand-strong hover:bg-brand-soft"
                       onClick={() => chooseStart(lastStart)}
                       title="Reuse the starting point from your previous route"
                     >
@@ -541,7 +541,7 @@ export default function NewRoutePage() {
                       {candidates.map((c, i) => (
                         <li key={`${c.lat}-${c.lng}-${i}`}>
                           <button
-                            className="w-full px-3 py-2 text-left text-sm text-gray-800 hover:bg-blue-50"
+                            className="w-full px-3 py-2 text-left text-sm text-gray-800 hover:bg-brand-soft"
                             onClick={() => chooseStart({ lat: c.lat, lng: c.lng, label: c.label })}
                           >
                             {c.label}
@@ -572,13 +572,13 @@ export default function NewRoutePage() {
                   value={shopQuery}
                   onChange={(e) => setShopQuery(e.target.value)}
                 />
-                <span className="shrink-0 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                <span className="shrink-0 rounded-full bg-brand-soft px-2.5 py-1 text-xs font-medium text-brand-strong">
                   {selectedIds.length} selected
                 </span>
               </div>
               <div className="flex items-center gap-3 text-xs">
                 <button
-                  className="font-medium text-blue-600 hover:underline disabled:text-gray-300"
+                  className="font-medium text-brand hover:underline disabled:text-gray-300"
                   disabled={shops.length === 0}
                   onClick={selectAllShown}
                 >
@@ -605,7 +605,7 @@ export default function NewRoutePage() {
                       <label className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-gray-50">
                         <input
                           type="checkbox"
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="h-4 w-4 rounded border-gray-300 accent-brand"
                           checked={selectedSet.has(shop.id)}
                           onChange={() => toggleShop(shop.id)}
                         />
@@ -671,7 +671,7 @@ export default function NewRoutePage() {
                       const leg = manualDirty ? undefined : legByShop.get(id);
                       return (
                         <li key={id} className="flex items-center gap-2.5 px-3 py-2">
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
                             {i + 1}
                           </span>
                           <span className="min-w-0 flex-1">
