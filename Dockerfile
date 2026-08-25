@@ -28,12 +28,8 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/prisma ./prisma
 
-# SQLite data lives on a volume; Postgres deployments only need DATABASE_URL.
-RUN mkdir -p /data && chown app:app /data
-VOLUME /data
-
 USER app
 EXPOSE 3000
 
-# Apply migrations, then start the server.
+# Apply migrations (uses DIRECT_URL), then start the server.
 CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]

@@ -4,21 +4,23 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: "file:/data/production.db"
+      # External Postgres (e.g. Neon). Both are required.
+      DATABASE_URL: "${DATABASE_URL:?set DATABASE_URL in .env}"
+      DIRECT_URL: "${DIRECT_URL:-${DATABASE_URL}}"
       AUTH_SECRET: "${AUTH_SECRET:?set AUTH_SECRET in .env}"
       APP_BASE_URL: "${APP_BASE_URL:-http://localhost:3000}"
+      # Email — Resend preferred; SMTP fallback.
+      RESEND_API_KEY: "${RESEND_API_KEY:-}"
+      MAIL_FROM: "${MAIL_FROM:-RoutePilot <onboarding@resend.dev>}"
       SMTP_HOST: "${SMTP_HOST:-}"
       SMTP_PORT: "${SMTP_PORT:-587}"
       SMTP_USER: "${SMTP_USER:-}"
       SMTP_PASS: "${SMTP_PASS:-}"
       SMTP_SECURE: "${SMTP_SECURE:-false}"
-      MAIL_FROM: "${MAIL_FROM:-Route System <no-reply@example.com>}"
       OSRM_BASE_URL: "${OSRM_BASE_URL:-https://router.project-osrm.org}"
       NOMINATIM_BASE_URL: "${NOMINATIM_BASE_URL:-https://nominatim.openstreetmap.org}"
       SEED_ADMIN_EMAIL: "${SEED_ADMIN_EMAIL:-}"
       SEED_ADMIN_PASSWORD: "${SEED_ADMIN_PASSWORD:-}"
-    volumes:
-      - app-data:/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
@@ -26,6 +28,3 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
-
-volumes:
-  app-data:

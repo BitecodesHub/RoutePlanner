@@ -8,9 +8,27 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: routepilot_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
-      DATABASE_URL: "file:./ci.db"
+      # Local Postgres service — no PgBouncer, so url and directUrl are equal.
+      DATABASE_URL: "postgresql://ci:ci@localhost:5432/routepilot_ci?schema=public"
+      DIRECT_URL: "postgresql://ci:ci@localhost:5432/routepilot_ci?schema=public"
       AUTH_SECRET: "ci-only-secret-0123456789abcdef-0123456789"
+      # RESEND_API_KEY is intentionally unset: mailer runs log-only and the
+      # live Resend integration suite auto-skips.
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,6 +38,7 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: npx prisma migrate deploy
+      - run: npx tsx prisma/seed.ts
       - run: npx tsc --noEmit
       - run: npm run test:unit
       - run: npm run test:api

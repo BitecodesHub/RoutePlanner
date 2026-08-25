@@ -30,7 +30,10 @@ export const env = {
       pass: process.env.SMTP_PASS || "",
     };
   },
+  get resendApiKey() {
+    return process.env.RESEND_API_KEY || "";
+  },
   get mailFrom() {
-    return process.env.MAIL_FROM || "Route System <no-reply@localhost>";
+    return process.env.MAIL_FROM || "RoutePilot <onboarding@resend.dev>";
   },
 };

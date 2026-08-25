@@ -2,11 +2,15 @@ import nodemailer, { type Transporter } from "nodemailer";
 import { env } from "@/lib/env";
 
 /**
- * Email service. SMTP is configured entirely from environment variables;
- * when unset, messages are logged so development and tests never require
- * real credentials. Sending is fire-and-forget from callers' perspective —
- * a mail failure must never fail the business operation.
+ * Email service. Delivery provider is chosen from the environment, in order:
+ *   1. Resend HTTP API   (RESEND_API_KEY set) — preferred; works on serverless
+ *   2. SMTP              (SMTP_HOST set)      — nodemailer fallback
+ *   3. Log-only          (neither set)        — dev/tests need no credentials
+ * A mail failure never throws to the caller — the business operation wins.
  */
+
+const RESEND_ENDPOINT = "https://api.resend.com/emails";
+const RESEND_TIMEOUT_MS = 10_000;
 
 let transporter: Transporter | null | undefined;
 
@@ -33,7 +37,44 @@ export interface MailMessage {
   text: string;
 }
 
+async function sendViaResend(apiKey: string, msg: MailMessage): Promise<boolean> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), RESEND_TIMEOUT_MS);
+  try {
+    const res = await fetch(RESEND_ENDPOINT, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: env.mailFrom,
+        to: [msg.to],
+        subject: msg.subject,
+        html: msg.html,
+        text: msg.text,
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      console.error(`[mail:resend] HTTP ${res.status}: ${detail.slice(0, 300)}`);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[mail:resend] send failed:", (err as Error).message);
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function sendMail(msg: MailMessage): Promise<boolean> {
+  const resendKey = env.resendApiKey;
+  if (resendKey) {
+    return sendViaResend(resendKey, msg);
+  }
   const t = getTransporter();
   if (!t) {
     console.info(`[mail:log-only] to=${msg.to} subject="${msg.subject}"`);
@@ -53,7 +94,7 @@ export async function sendMail(msg: MailMessage): Promise<boolean> {
 function layout(title: string, bodyHtml: string): string {
   return `<!doctype html><html><body style="font-family:Arial,Helvetica,sans-serif;background:#f4f5f7;margin:0;padding:24px">
   <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e2e4e8">
-    <div style="background:#1d4ed8;color:#ffffff;padding:16px 24px;font-size:18px;font-weight:bold">Shop Route System</div>
+    <div style="background:#1d1d1f;color:#ffffff;padding:16px 24px;font-size:18px;font-weight:bold">ROUTE<span style="color:#f4512c">PILOT</span></div>
     <div style="padding:24px">
       <h2 style="margin-top:0;font-size:16px;color:#111827">${title}</h2>
       ${bodyHtml}

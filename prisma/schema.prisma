@@ -7,8 +7,11 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // Pooled connection (PgBouncer) for the app runtime.
+  url       = env("DATABASE_URL")
+  // Direct connection for migrations (PgBouncer cannot run DDL reliably).
+  directUrl = env("DIRECT_URL")
 }
 
 model User {

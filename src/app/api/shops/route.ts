@@ -21,10 +21,10 @@ export const GET = withErrorHandling(async (req: NextRequest) => {
     ...(query.q
       ? {
           OR: [
-            { name: { contains: query.q } },
-            { address: { contains: query.q } },
-            { phone: { contains: query.q } },
-            { externalRef: { contains: query.q } },
+            { name: { contains: query.q, mode: "insensitive" } },
+            { address: { contains: query.q, mode: "insensitive" } },
+            { phone: { contains: query.q, mode: "insensitive" } },
+            { externalRef: { contains: query.q, mode: "insensitive" } },
           ],
         }
       : {}),
@@ -73,10 +73,10 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
 
     if (!duplicate) {
       const trimmedName = data.name.trim();
-      // SQLite `contains` is case-insensitive for ASCII; refine to exact
-      // (case-insensitive) name equality in JS, then check proximity.
+      // Case-insensitive name match, then refine to exact (case-insensitive)
+      // equality in JS and check proximity.
       const candidates = await prisma.shop.findMany({
-        where: { deletedAt: null, name: { contains: trimmedName } },
+        where: { deletedAt: null, name: { contains: trimmedName, mode: "insensitive" } },
         select: { id: true, name: true, latitude: true, longitude: true },
       });
       const nameKey = trimmedName.toLowerCase();
