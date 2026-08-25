@@ -1,8 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Self-contained server bundle for the Docker image.
-  output: "standalone",
+  // Self-contained server bundle for the Docker image only. Vercel does its
+  // own output tracing and `standalone` breaks its build step
+  // (ENOENT next-server.js.nft.json), so skip it when building on Vercel.
+  output: process.env.VERCEL ? undefined : "standalone",
   // Security headers applied to every response.
   async headers() {
     return [
