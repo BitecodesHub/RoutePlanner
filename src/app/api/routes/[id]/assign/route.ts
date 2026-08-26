@@ -7,7 +7,7 @@ import { audit } from "@/lib/audit";
 import { routeAssignedEmail } from "@/lib/mailer";
 import { queueMail } from "@/lib/mail-queue";
 import { formatDistance, formatDuration } from "@/lib/geo";
-import { env } from "@/lib/env";
+import { getBaseUrl } from "@/lib/base-url";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -46,6 +46,7 @@ export const POST = withErrorHandling(async (req: NextRequest, ctx: Ctx) => {
   });
 
   if (updated.driver) {
+    const baseUrl = await getBaseUrl();
     queueMail(
       routeAssignedEmail({
         to: updated.driver.email,
@@ -54,7 +55,7 @@ export const POST = withErrorHandling(async (req: NextRequest, ctx: Ctx) => {
         stopCount: updated.stops.length,
         distanceText: formatDistance(updated.totalDistanceM ?? 0),
         durationText: formatDuration(updated.totalDurationS ?? 0),
-        shareUrl: `${env.appBaseUrl}/share/${updated.shareToken}`,
+        shareUrl: `${baseUrl}/share/${updated.shareToken}`,
         scheduledFor: updated.scheduledFor ? updated.scheduledFor.toLocaleString() : undefined,
       }),
     );

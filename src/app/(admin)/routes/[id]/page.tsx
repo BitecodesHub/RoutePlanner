@@ -64,6 +64,7 @@ export default function RouteDetailPage() {
   const [driverSel, setDriverSel] = useState("");
   const [assigning, setAssigning] = useState(false);
   const [unassigning, setUnassigning] = useState(false);
+  const [resending, setResending] = useState(false);
 
   const [statusBusy, setStatusBusy] = useState<string | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -127,6 +128,21 @@ export default function RouteDetailPage() {
     },
     [route, toast, load],
   );
+
+  const resendEmail = useCallback(async () => {
+    if (!route) return;
+    setResending(true);
+    try {
+      const res = await api<{ sentTo: string }>(`/api/routes/${route.id}/resend`, {
+        method: "POST",
+      });
+      toast("success", `Route email re-sent to ${res.sentTo}`);
+    } catch (e) {
+      toast("error", errMessage(e, "Could not resend the email"));
+    } finally {
+      setResending(false);
+    }
+  }, [route, toast]);
 
   const setStatus = useCallback(
     async (status: string) => {
@@ -433,13 +449,22 @@ export default function RouteDetailPage() {
                     </p>
                   )}
                 </div>
-                <Button
-                  variant="ghost"
-                  loading={unassigning}
-                  onClick={() => void assign(null)}
-                >
-                  Unassign driver
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="secondary"
+                    loading={resending}
+                    onClick={() => void resendEmail()}
+                  >
+                    Resend email
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    loading={unassigning}
+                    onClick={() => void assign(null)}
+                  >
+                    Unassign driver
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="space-y-3">

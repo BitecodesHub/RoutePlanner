@@ -5,6 +5,7 @@ import { hashPassword } from "@/lib/auth";
 import { tempPassword } from "@/lib/tokens";
 import { driverWelcomeEmail } from "@/lib/mailer";
 import { queueMail } from "@/lib/mail-queue";
+import { getBaseUrl } from "@/lib/base-url";
 import { audit } from "@/lib/audit";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -32,12 +33,14 @@ export const POST = withErrorHandling(async (req: NextRequest, ctx: Ctx) => {
     },
   });
 
+  const baseUrl = await getBaseUrl();
   queueMail(
     driverWelcomeEmail({
       to: driver.email,
       name: driver.name,
       email: driver.email,
       tempPassword: plainPassword,
+      loginUrl: `${baseUrl}/login`,
     }),
   );
 

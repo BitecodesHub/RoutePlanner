@@ -37,6 +37,15 @@ export interface MailMessage {
   text: string;
 }
 
+/** Reply-To improves deliverability — mailbox providers distrust unrepliable mail. */
+function replyToAddress(): string | undefined {
+  const explicit = process.env.MAIL_REPLY_TO?.trim();
+  if (explicit) return explicit;
+  const m = env.mailFrom.match(/<([^>]+)>/);
+  if (m) return m[1];
+  return env.mailFrom.includes("@") ? env.mailFrom : undefined;
+}
+
 async function sendViaResend(apiKey: string, msg: MailMessage): Promise<boolean> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), RESEND_TIMEOUT_MS);
@@ -53,6 +62,7 @@ async function sendViaResend(apiKey: string, msg: MailMessage): Promise<boolean>
         subject: msg.subject,
         html: msg.html,
         text: msg.text,
+        ...(replyToAddress() ? { reply_to: replyToAddress() } : {}),
       }),
       signal: controller.signal,
     });
@@ -81,7 +91,7 @@ export async function sendMail(msg: MailMessage): Promise<boolean> {
     return false;
   }
   try {
-    await t.sendMail({ from: env.mailFrom, ...msg });
+    await t.sendMail({ from: env.mailFrom, replyTo: replyToAddress(), ...msg });
     return true;
   } catch (err) {
     console.error("[mail] send failed:", (err as Error).message);
@@ -108,8 +118,9 @@ export function driverWelcomeEmail(opts: {
   name: string;
   email: string;
   tempPassword: string;
+  loginUrl: string;
 }): MailMessage {
-  const loginUrl = `${env.appBaseUrl}/login`;
+  const loginUrl = opts.loginUrl;
   return {
     to: opts.to,
     subject: "Your driver account is ready",
@@ -144,7 +155,7 @@ export function routeAssignedEmail(opts: {
       `<p>Hello ${opts.driverName},</p>
        <p>You have been assigned the route <strong>${opts.routeName}</strong>.</p>
        <ul><li>${opts.stopCount} stops</li><li>${opts.distanceText}</li><li>Approx. ${opts.durationText}</li>${opts.scheduledFor ? `<li>Scheduled for ${opts.scheduledFor}</li>` : ""}</ul>
-       <p><a href="${opts.shareUrl}" style="background:#1d4ed8;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;display:inline-block">Open route</a></p>`,
+       <p><a href="${opts.shareUrl}" style="background:#f4512c;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;display:inline-block">Open route</a></p>`,
     ),
   };
 }
@@ -175,7 +186,7 @@ export function passwordResetEmail(opts: { to: string; name: string; resetUrl: s
       "Password reset",
       `<p>Hello ${opts.name},</p>
        <p>A password reset was requested for your account. The link below is valid for 1 hour.</p>
-       <p><a href="${opts.resetUrl}" style="background:#1d4ed8;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;display:inline-block">Set a new password</a></p>
+       <p><a href="${opts.resetUrl}" style="background:#f4512c;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;display:inline-block">Set a new password</a></p>
        <p>If you did not request this, you can ignore this email.</p>`,
     ),
   };

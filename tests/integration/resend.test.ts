@@ -26,6 +26,7 @@ describe.runIf(hasKey)("Resend live delivery", () => {
       name: "Sandbox Driver",
       email: "delivered@resend.dev",
       tempPassword: "Test-Pass-123",
+      loginUrl: "https://routepilot.bitecodes.com/login",
     });
     const ok = await sendMail(msg);
     expect(ok).toBe(true);
