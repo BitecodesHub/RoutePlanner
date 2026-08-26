@@ -3,7 +3,8 @@ import { prisma } from "@/lib/db";
 import { ApiError, getClientIp, requireRole, withErrorHandling } from "@/lib/http";
 import { hashPassword } from "@/lib/auth";
 import { tempPassword } from "@/lib/tokens";
-import { driverWelcomeEmail, sendMail } from "@/lib/mailer";
+import { driverWelcomeEmail } from "@/lib/mailer";
+import { queueMail } from "@/lib/mail-queue";
 import { audit } from "@/lib/audit";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -31,7 +32,7 @@ export const POST = withErrorHandling(async (req: NextRequest, ctx: Ctx) => {
     },
   });
 
-  void sendMail(
+  queueMail(
     driverWelcomeEmail({
       to: driver.email,
       name: driver.name,

@@ -5,7 +5,8 @@ import { ApiError, getClientIp, requireUser, withErrorHandling } from "@/lib/htt
 import { routeStatusSchema } from "@/lib/validation";
 import { routeToDto } from "@/lib/serialize";
 import { audit } from "@/lib/audit";
-import { routeStatusEmail, sendMail } from "@/lib/mailer";
+import { routeStatusEmail } from "@/lib/mailer";
+import { queueMail } from "@/lib/mail-queue";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -73,7 +74,7 @@ export const POST = withErrorHandling(async (req: NextRequest, ctx: Ctx) => {
   // Notify the other party on terminal transitions.
   if (to === "COMPLETED" || to === "CANCELLED") {
     if (user.role === "DRIVER") {
-      void sendMail(
+      queueMail(
         routeStatusEmail({
           to: route.createdBy.email,
           routeName: route.name,
@@ -82,7 +83,7 @@ export const POST = withErrorHandling(async (req: NextRequest, ctx: Ctx) => {
         }),
       );
     } else if (route.driver) {
-      void sendMail(
+      queueMail(
         routeStatusEmail({ to: route.driver.email, routeName: route.name, status: to }),
       );
     }

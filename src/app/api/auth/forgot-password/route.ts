@@ -5,7 +5,8 @@ import { audit } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
 import { forgotPasswordSchema } from "@/lib/validation";
 import { hashToken, secureToken } from "@/lib/tokens";
-import { passwordResetEmail, sendMail } from "@/lib/mailer";
+import { passwordResetEmail } from "@/lib/mailer";
+import { queueMail } from "@/lib/mail-queue";
 import { env } from "@/lib/env";
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -45,7 +46,7 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
     });
 
     const resetUrl = `${env.appBaseUrl}/reset-password?token=${raw}`;
-    void sendMail(passwordResetEmail({ to: user.email, name: user.name, resetUrl }));
+    queueMail(passwordResetEmail({ to: user.email, name: user.name, resetUrl }));
 
     await audit({
       userId: user.id,

@@ -6,7 +6,8 @@ import { driverCreateSchema } from "@/lib/validation";
 import { driverToDto } from "@/lib/serialize";
 import { hashPassword } from "@/lib/auth";
 import { tempPassword } from "@/lib/tokens";
-import { driverWelcomeEmail, sendMail } from "@/lib/mailer";
+import { driverWelcomeEmail } from "@/lib/mailer";
+import { queueMail } from "@/lib/mail-queue";
 import { audit } from "@/lib/audit";
 
 const ACTIVE_ROUTE_STATUSES = ["ASSIGNED", "IN_PROGRESS"];
@@ -72,7 +73,7 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
     throw err;
   }
 
-  void sendMail(
+  queueMail(
     driverWelcomeEmail({
       to: driver.email,
       name: driver.name,

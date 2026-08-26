@@ -4,7 +4,8 @@ import { ApiError, getClientIp, requireRole, withErrorHandling } from "@/lib/htt
 import { routeAssignSchema } from "@/lib/validation";
 import { routeToDto } from "@/lib/serialize";
 import { audit } from "@/lib/audit";
-import { routeAssignedEmail, sendMail } from "@/lib/mailer";
+import { routeAssignedEmail } from "@/lib/mailer";
+import { queueMail } from "@/lib/mail-queue";
 import { formatDistance, formatDuration } from "@/lib/geo";
 import { env } from "@/lib/env";
 
@@ -45,7 +46,7 @@ export const POST = withErrorHandling(async (req: NextRequest, ctx: Ctx) => {
   });
 
   if (updated.driver) {
-    void sendMail(
+    queueMail(
       routeAssignedEmail({
         to: updated.driver.email,
         driverName: updated.driver.name,

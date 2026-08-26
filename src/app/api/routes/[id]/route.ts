@@ -6,7 +6,8 @@ import { routeUpdateSchema } from "@/lib/validation";
 import { buildRoute, type ShopPoint } from "@/lib/route-service";
 import { routeToDto } from "@/lib/serialize";
 import { audit } from "@/lib/audit";
-import { routeStatusEmail, sendMail } from "@/lib/mailer";
+import { routeStatusEmail } from "@/lib/mailer";
+import { queueMail } from "@/lib/mail-queue";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -170,7 +171,7 @@ export const DELETE = withErrorHandling(async (req: NextRequest, ctx: Ctx) => {
   });
 
   if (wasActive && route.driver) {
-    void sendMail(
+    queueMail(
       routeStatusEmail({ to: route.driver.email, routeName: route.name, status: "CANCELLED" }),
     );
   }

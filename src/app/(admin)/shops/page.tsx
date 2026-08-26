@@ -630,10 +630,10 @@ function ShopsScreen() {
       />
 
       <div className="space-y-4">
-        {/* Filter bar */}
+        {/* Filter bar: search fills the row; compact filters sit on the right. */}
         <Card>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="min-w-56 flex-1">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+            <div className="flex-1">
               <Input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
@@ -641,32 +641,34 @@ function ShopsScreen() {
                 aria-label="Search shops"
               />
             </div>
-            <Select
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value as StatusFilter);
-                setPage(1);
-              }}
-              className="w-36"
-              aria-label="Status filter"
-            >
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
-              <option value="ALL">All</option>
-            </Select>
-            <Select
-              value={String(pageSize)}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setPage(1);
-              }}
-              className="w-36"
-              aria-label="Page size"
-            >
-              <option value="25">25 per page</option>
-              <option value="50">50 per page</option>
-              <option value="100">100 per page</option>
-            </Select>
+            <div className="flex shrink-0 items-center gap-2">
+              <Select
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value as StatusFilter);
+                  setPage(1);
+                }}
+                className="w-28"
+                aria-label="Status filter"
+              >
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+                <option value="ALL">All</option>
+              </Select>
+              <Select
+                value={String(pageSize)}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setPage(1);
+                }}
+                className="w-32"
+                aria-label="Page size"
+              >
+                <option value="25">25 / page</option>
+                <option value="50">50 / page</option>
+                <option value="100">100 / page</option>
+              </Select>
+            </div>
           </div>
         </Card>
 
