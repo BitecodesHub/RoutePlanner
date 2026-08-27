@@ -10,6 +10,7 @@ import {
   Button,
   Card,
   EmptyState,
+  Input,
   LoadingBlock,
   Pagination,
   Select,
@@ -59,6 +60,7 @@ function formatDate(iso: string | null): string {
 export default function RoutesPage() {
   const [status, setStatus] = useState("ALL");
   const [driverId, setDriverId] = useState("");
+  const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [data, setData] = useState<Paginated<RouteListItemDto> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,6 +73,7 @@ export default function RoutesPage() {
     try {
       const params = new URLSearchParams({ status, page: String(page) });
       if (driverId) params.set("driverId", driverId);
+      if (query.trim()) params.set("q", query.trim());
       const res = await api<Paginated<RouteListItemDto>>(`/api/routes?${params.toString()}`);
       setData(res);
     } catch (e) {
@@ -78,11 +81,13 @@ export default function RoutesPage() {
     } finally {
       setLoading(false);
     }
-  }, [status, driverId, page]);
+  }, [status, driverId, query, page]);
 
+  // Debounce so typing in the search box does not fire a request per keystroke.
   useEffect(() => {
-    void load();
-  }, [load]);
+    const timer = setTimeout(() => void load(), query ? 300 : 0);
+    return () => clearTimeout(timer);
+  }, [load, query]);
 
   useEffect(() => {
     api<{ items: DriverDto[] }>("/api/drivers")
@@ -103,38 +108,69 @@ export default function RoutesPage() {
       />
 
       <Card padded={false}>
-        <div className="flex flex-wrap items-center gap-3 border-b border-gray-100 px-5 py-3.5">
-          <Select
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value);
-              setPage(1);
-            }}
-            className="w-44"
-            aria-label="Filter by status"
-          >
-            {STATUS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </Select>
-          <Select
-            value={driverId}
-            onChange={(e) => {
-              setDriverId(e.target.value);
-              setPage(1);
-            }}
-            className="w-48"
-            aria-label="Filter by driver"
-          >
-            <option value="">All drivers</option>
-            {drivers.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </Select>
+        <div className="flex flex-wrap items-center gap-2.5 border-b border-gray-100 px-5 py-3.5">
+          <div className="w-full min-w-40 sm:w-64">
+            <Input
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Search routes…"
+              aria-label="Search routes by name"
+            />
+          </div>
+          <div className="w-40">
+            <Select
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value);
+                setPage(1);
+              }}
+              aria-label="Filter by status"
+            >
+              {STATUS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="w-44">
+            <Select
+              value={driverId}
+              onChange={(e) => {
+                setDriverId(e.target.value);
+                setPage(1);
+              }}
+              aria-label="Filter by driver"
+            >
+              <option value="">All drivers</option>
+              {drivers.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+          {(query || status !== "ALL" || driverId) && (
+            <button
+              className="text-xs font-medium text-gray-500 hover:text-gray-800 hover:underline"
+              onClick={() => {
+                setQuery("");
+                setStatus("ALL");
+                setDriverId("");
+                setPage(1);
+              }}
+            >
+              Clear filters
+            </button>
+          )}
+          {data && !loading && (
+            <span className="ml-auto text-xs text-gray-400">
+              {data.total} route{data.total === 1 ? "" : "s"}
+            </span>
+          )}
         </div>
 
         {loading && <LoadingBlock label="Loading routes…" />}
@@ -149,11 +185,18 @@ export default function RoutesPage() {
         )}
 
         {!loading && !error && routes.length === 0 && (
-          <EmptyState
-            title="No routes yet"
-            description="Plan your first route to start dispatching drivers to shops."
-            action={<LinkButton href="/routes/new">New route</LinkButton>}
-          />
+          query || status !== "ALL" || driverId ? (
+            <EmptyState
+              title="No routes match"
+              description="Try a different search or clear the filters."
+            />
+          ) : (
+            <EmptyState
+              title="No routes yet"
+              description="Plan your first route to start dispatching drivers to shops."
+              action={<LinkButton href="/routes/new">New route</LinkButton>}
+            />
+          )
         )}
 
         {!loading && !error && routes.length > 0 && (

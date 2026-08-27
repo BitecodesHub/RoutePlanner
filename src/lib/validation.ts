@@ -111,6 +111,7 @@ export const stopStatusSchema = z.object({
 export const routeListQuerySchema = z.object({
   status: z.enum(["DRAFT", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "ALL"]).default("ALL"),
   driverId: z.string().optional(),
+  q: z.string().trim().max(200).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });

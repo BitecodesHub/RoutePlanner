@@ -22,6 +22,9 @@ export const GET = withErrorHandling(async (req: NextRequest) => {
   if (query.status !== "ALL") {
     conditions.push({ status: query.status });
   }
+  if (query.q) {
+    conditions.push({ name: { contains: query.q, mode: "insensitive" } });
+  }
   const where: Prisma.RouteWhereInput = { AND: conditions };
 
   const [total, routes] = await prisma.$transaction([

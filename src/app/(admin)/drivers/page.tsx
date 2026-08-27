@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/AppShell";
 import {
   Badge,
@@ -104,11 +104,83 @@ interface DriverFormState {
 
 const emptyForm: DriverFormState = { name: "", email: "", phone: "", password: "", status: "ACTIVE" };
 
+/* ------------------------------- sorting ------------------------------- */
+
+type SortKey = "name" | "email" | "status" | "activeRoutes" | "lastLogin";
+
+const SORT_ACCESSORS: Record<SortKey, (d: DriverDto) => string | number> = {
+  name: (d) => d.name.toLowerCase(),
+  email: (d) => d.email.toLowerCase(),
+  status: (d) => d.status,
+  activeRoutes: (d) => d.activeRouteCount ?? 0,
+  // Missing timestamps sort as oldest so active drivers surface first on desc.
+  lastLogin: (d) => (d.lastLoginAt ? new Date(d.lastLoginAt).getTime() : 0),
+};
+
+function SortableTh({
+  label,
+  sortKey,
+  sort,
+  onSort,
+  className = "",
+}: {
+  label: string;
+  sortKey: SortKey;
+  sort: { key: SortKey; dir: 1 | -1 };
+  onSort: (key: SortKey) => void;
+  className?: string;
+}) {
+  const active = sort.key === sortKey;
+  return (
+    <th className={`px-5 py-3 font-medium ${className}`}>
+      <button
+        className={`inline-flex items-center gap-1 uppercase tracking-wide hover:text-gray-800 ${
+          active ? "text-gray-800" : ""
+        }`}
+        onClick={() => onSort(sortKey)}
+        aria-label={`Sort by ${label}`}
+      >
+        {label}
+        <span className={`text-[10px] ${active ? "opacity-100" : "opacity-0"}`}>
+          {active && sort.dir === -1 ? "▼" : "▲"}
+        </span>
+      </button>
+    </th>
+  );
+}
+
 /* -------------------------------- page -------------------------------- */
 
 export default function DriversPage() {
   const { toast } = useToast();
   const [drivers, setDrivers] = useState<DriverDto[] | null>(null);
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "name", dir: 1 });
+
+  const onSort = (key: SortKey) =>
+    setSort((s) => (s.key === key ? { key, dir: s.dir === 1 ? -1 : 1 } : { key, dir: 1 }));
+
+  /** Search across name/email/phone, then sort by the active column. */
+  const visibleDrivers = useMemo(() => {
+    if (!drivers) return null;
+    const q = query.trim().toLowerCase();
+    const filtered = q
+      ? drivers.filter(
+          (d) =>
+            d.name.toLowerCase().includes(q) ||
+            d.email.toLowerCase().includes(q) ||
+            (d.phone ?? "").toLowerCase().includes(q),
+        )
+      : drivers;
+    const accessor = SORT_ACCESSORS[sort.key];
+    return [...filtered].sort((a, b) => {
+      const va = accessor(a);
+      const vb = accessor(b);
+      if (va < vb) return -sort.dir;
+      if (va > vb) return sort.dir;
+      return 0;
+    });
+  }, [drivers, query, sort]);
 
   // Add modal
   const [addOpen, setAddOpen] = useState(false);
@@ -303,7 +375,32 @@ export default function DriversPage() {
       />
 
       <Card padded={false}>
-        {drivers === null ? (
+        {drivers !== null && drivers.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2.5 border-b border-gray-100 px-5 py-3.5">
+            <div className="w-full min-w-40 sm:w-64">
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search drivers…"
+                aria-label="Search drivers by name, email or phone"
+              />
+            </div>
+            {query && (
+              <button
+                className="text-xs font-medium text-gray-500 hover:text-gray-800 hover:underline"
+                onClick={() => setQuery("")}
+              >
+                Clear
+              </button>
+            )}
+            {visibleDrivers && (
+              <span className="ml-auto text-xs text-gray-400">
+                {visibleDrivers.length} of {drivers.length} driver{drivers.length === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
+        )}
+        {drivers === null || visibleDrivers === null ? (
           <LoadingBlock label="Loading drivers…" />
         ) : drivers.length === 0 ? (
           <EmptyState
@@ -311,21 +408,31 @@ export default function DriversPage() {
             description="Add your first driver to start assigning routes."
             action={<Button onClick={openAdd}>Add driver</Button>}
           />
+        ) : visibleDrivers.length === 0 ? (
+          <EmptyState
+            title="No drivers match"
+            description="Try a different search."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-xs uppercase tracking-wide text-gray-500">
-                  <th className="px-5 py-3 font-medium">Name</th>
-                  <th className="px-5 py-3 font-medium">Email</th>
-                  <th className="px-5 py-3 font-medium">Status</th>
-                  <th className="px-5 py-3 font-medium">Active routes</th>
-                  <th className="px-5 py-3 font-medium">Last login</th>
+                  <SortableTh label="Name" sortKey="name" sort={sort} onSort={onSort} />
+                  <SortableTh label="Email" sortKey="email" sort={sort} onSort={onSort} />
+                  <SortableTh label="Status" sortKey="status" sort={sort} onSort={onSort} />
+                  <SortableTh
+                    label="Active routes"
+                    sortKey="activeRoutes"
+                    sort={sort}
+                    onSort={onSort}
+                  />
+                  <SortableTh label="Last login" sortKey="lastLogin" sort={sort} onSort={onSort} />
                   <th className="px-5 py-3 text-right font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {drivers.map((driver) => (
+                {visibleDrivers.map((driver) => (
                   <tr key={driver.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
                     <td className="px-5 py-3">
                       <div className="font-medium text-gray-900">{driver.name}</div>
