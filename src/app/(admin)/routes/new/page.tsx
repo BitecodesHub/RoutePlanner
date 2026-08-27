@@ -6,11 +6,13 @@ import { api, ClientApiError } from "@/lib/client";
 import { formatDistance, formatDuration, haversineMeters } from "@/lib/geo";
 import type {
   GeocodeResultDto,
+  ImportSelectSummaryDto,
   OptimizePreviewDto,
   Paginated,
   RouteDto,
   ShopDto,
 } from "@/lib/types";
+import { fileToShopsCsv } from "@/lib/sheet-file";
 import {
   Badge,
   Button,
@@ -31,6 +33,17 @@ interface StartPoint {
   lng: number;
   label?: string;
 }
+
+/**
+ * Depot every route starts from (and returns to, since routes are round
+ * trips): Aarogya Sales, Ahmedabad — https://maps.app.goo.gl/vhkAEhXdwXY81nVF7.
+ * Pre-selected on load; "Change" switches to a different point when needed.
+ */
+const DEFAULT_START: StartPoint = {
+  lat: 23.061667,
+  lng: 72.504,
+  label: "Aarogya Sales (default depot)",
+};
 
 interface GeocodeResponse {
   result: GeocodeResultDto | null;
@@ -85,13 +98,17 @@ export default function NewRoutePage() {
   const [resolving, setResolving] = useState(false);
   const [locating, setLocating] = useState(false);
   const [candidates, setCandidates] = useState<GeocodeResultDto[] | null>(null);
-  const [start, setStart] = useState<StartPoint | null>(null);
+  // The default depot is pre-selected; "Change" lets the user pick another point.
+  const [start, setStart] = useState<StartPoint | null>(DEFAULT_START);
 
   /* ------------------------------ Step 2: shops ------------------------------ */
   const [shopQuery, setShopQuery] = useState("");
   const [shops, setShops] = useState<ShopDto[]>([]);
   const [shopsLoading, setShopsLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [importing, setImporting] = useState(false);
+  const [importReport, setImportReport] = useState<ImportSelectSummaryDto | null>(null);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
   /** Every shop ever seen, so selections survive changing the search filter. */
   const shopCache = useRef<Map<string, ShopDto>>(new Map());
 
@@ -273,6 +290,60 @@ export default function NewRoutePage() {
     setOrderedIds([]);
     setManualDirty(false);
   }, []);
+
+  /**
+   * Import a loading slip (Excel/CSV): parties are matched against existing
+   * shops (new ones are created when the row has coordinates) and every
+   * resolved shop is added to the selection.
+   */
+  const importShopsFile = useCallback(
+    async (file: File) => {
+      setImporting(true);
+      setImportReport(null);
+      try {
+        const csv = await fileToShopsCsv(file);
+        const fd = new FormData();
+        fd.append(
+          "file",
+          new File([csv], file.name.replace(/\.(xlsx|xls)$/i, ".csv"), { type: "text/csv" }),
+        );
+        const res = await api<ImportSelectSummaryDto>("/api/shops/import-select", {
+          method: "POST",
+          body: fd,
+        });
+        for (const s of res.shops) shopCache.current.set(s.id, s);
+        optimizeSeq.current++;
+        setOptimizing(false);
+        setPreview(null);
+        setOrderedIds([]);
+        setManualDirty(false);
+        setSelectedIds((prev) =>
+          [...new Set([...prev, ...res.shops.map((s) => s.id)])].slice(0, 200),
+        );
+        setImportReport(res);
+        if (res.shops.length === 0) {
+          toast("error", "No shops could be matched or created from that file");
+        } else {
+          toast(
+            "success",
+            `${res.shops.length} shop${res.shops.length === 1 ? "" : "s"} selected` +
+              (res.created > 0 ? ` (${res.created} newly added)` : ""),
+          );
+        }
+      } catch (e) {
+        toast(
+          "error",
+          e instanceof Error && !(e instanceof ClientApiError)
+            ? e.message
+            : errMessage(e, "Import failed"),
+        );
+      } finally {
+        setImporting(false);
+        if (importInputRef.current) importInputRef.current.value = "";
+      }
+    },
+    [toast],
+  );
 
   const optimize = useCallback(async () => {
     if (!start || selectedIds.length === 0) return;
@@ -483,7 +554,7 @@ export default function NewRoutePage() {
                     {start.label ?? "Starting point"}
                   </p>
                   <p className="text-xs text-emerald-700">
-                    {start.lat.toFixed(5)}, {start.lng.toFixed(5)}
+                    {start.lat.toFixed(5)}, {start.lng.toFixed(5)} · route starts and ends here
                   </p>
                 </div>
                 <button
@@ -519,6 +590,13 @@ export default function NewRoutePage() {
                   </Button>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    className="max-w-full truncate rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800 hover:bg-emerald-100"
+                    onClick={() => chooseStart(DEFAULT_START)}
+                    title="Reuse the default depot (Aarogya Sales)"
+                  >
+                    Use default: {DEFAULT_START.label}
+                  </button>
                   <Button variant="ghost" loading={locating} onClick={useMyLocation}>
                     Use my location
                   </Button>
@@ -576,7 +654,7 @@ export default function NewRoutePage() {
                   {selectedIds.length} selected
                 </span>
               </div>
-              <div className="flex items-center gap-3 text-xs">
+              <div className="flex flex-wrap items-center gap-3 text-xs">
                 <button
                   className="font-medium text-brand hover:underline disabled:text-gray-300"
                   disabled={shops.length === 0}
@@ -585,13 +663,59 @@ export default function NewRoutePage() {
                   Select all shown ({shops.length})
                 </button>
                 <button
+                  className="font-medium text-brand hover:underline disabled:text-gray-300"
+                  disabled={importing}
+                  onClick={() => importInputRef.current?.click()}
+                >
+                  {importing ? "Importing…" : "Import Excel/CSV"}
+                </button>
+                <button
                   className="font-medium text-gray-500 hover:underline disabled:text-gray-300"
                   disabled={selectedIds.length === 0}
                   onClick={clearSelection}
                 >
                   Clear
                 </button>
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept=".xlsx,.xls,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void importShopsFile(f);
+                  }}
+                />
               </div>
+              {importing && <LoadingBlock label="Matching shops from the file…" />}
+              {importReport && (
+                <div className="space-y-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium text-gray-800">
+                      {importReport.filename}: {importReport.matched} matched
+                      {importReport.created > 0 && `, ${importReport.created} newly added`}
+                      {importReport.skipped.length > 0 && `, ${importReport.skipped.length} skipped`}
+                    </p>
+                    <button
+                      className="shrink-0 font-medium text-gray-400 hover:text-gray-700"
+                      aria-label="Dismiss import summary"
+                      onClick={() => setImportReport(null)}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  {importReport.skipped.length > 0 && (
+                    <ul className="max-h-32 list-disc space-y-0.5 overflow-y-auto pl-4 text-amber-800">
+                      {importReport.skipped.map((s, i) => (
+                        <li key={`${s.rowNumber}-${i}`}>
+                          Row {s.rowNumber}
+                          {s.name ? ` (${s.name})` : ""}: {s.reason}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
               {shopsLoading ? (
                 <LoadingBlock label="Loading shops…" />
               ) : sortedShops.length === 0 ? (

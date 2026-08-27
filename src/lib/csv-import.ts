@@ -29,6 +29,8 @@ export interface CsvParseResult {
   errors: RowError[];
   duplicatesInFile: RowError[];
   totalRows: number;
+  /** Rows with a usable name but no coordinates — only populated with `requireCoords: false`. */
+  coordless: ParsedShopRow[];
 }
 
 const HEADER_ALIASES: Record<string, string[]> = {
@@ -46,6 +48,24 @@ const HEADER_ALIASES: Record<string, string[]> = {
 
 function normalizeHeader(h: string): string {
   return h.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/**
+ * Index of the first row that looks like the column-header row (contains a
+ * shop-name column such as Party/Name/Shop). Lets us accept spreadsheet
+ * exports with title/salesman/beat banner rows above the real header, like
+ * distributor loading slips. Returns -1 when no header row is found.
+ */
+export function findHeaderRowIndex(rows: unknown[][]): number {
+  const nameAliases = HEADER_ALIASES.name;
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i] ?? [];
+    for (const cell of row) {
+      if (typeof cell !== "string" && typeof cell !== "number") continue;
+      if (nameAliases.includes(normalizeHeader(String(cell)))) return i;
+    }
+  }
+  return -1;
 }
 
 function buildHeaderMap(headers: string[]): Map<string, string> {
@@ -82,7 +102,17 @@ const DUPLICATE_RADIUS_M = 50;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function parseShopsCsv(content: string): CsvParseResult {
+export interface ParseShopsCsvOptions {
+  /**
+   * When false, rows with a name but no valid coordinates are collected in
+   * `coordless` instead of being rejected — used by the route-planner import,
+   * which can still match such rows against shops already in the database.
+   */
+  requireCoords?: boolean;
+}
+
+export function parseShopsCsv(content: string, options?: ParseShopsCsvOptions): CsvParseResult {
+  const requireCoords = options?.requireCoords ?? true;
   const parsed = Papa.parse<Record<string, string>>(content, {
     header: true,
     skipEmptyLines: "greedy",
@@ -98,6 +128,7 @@ export function parseShopsCsv(content: string): CsvParseResult {
       errors: [{ rowNumber: 0, message: "No shop-name column found (expected a header such as Name, Shop, or Party)" }],
       duplicatesInFile: [],
       totalRows: 0,
+      coordless: [],
     };
   }
 
@@ -107,9 +138,10 @@ export function parseShopsCsv(content: string): CsvParseResult {
   };
 
   const valid: ParsedShopRow[] = [];
+  const coordless: ParsedShopRow[] = [];
   const errors: RowError[] = [];
   const duplicatesInFile: RowError[] = [];
-  const seen: { key: string; lat: number; lng: number; ref?: string }[] = [];
+  const seen: { key: string; lat: number; lng: number; ref?: string; hasCoords: boolean }[] = [];
 
   let rowNumber = 0;
   for (const row of parsed.data) {
@@ -127,9 +159,15 @@ export function parseShopsCsv(content: string): CsvParseResult {
       errors.push({ rowNumber, message: "Looks like a repeated header row — skipped" });
       continue;
     }
+    // Summary/footer row (e.g. the "Total" line on a loading slip).
+    if (normalizeShopName(name) === "total") {
+      errors.push({ rowNumber, message: "Looks like a totals row — skipped" });
+      continue;
+    }
 
     let lat = parseFloat(get(row, "latitude"));
     let lng = parseFloat(get(row, "longitude"));
+    let hasCoords = true;
 
     if (!isValidCoordinate(lat, lng)) {
       // Try to recover coordinates from an embedded Google Maps link.
@@ -138,12 +176,16 @@ export function parseShopsCsv(content: string): CsvParseResult {
       if (fromLink) {
         lat = fromLink.lat;
         lng = fromLink.lng;
-      } else {
+      } else if (requireCoords) {
         errors.push({
           rowNumber,
           message: `"${name}": missing or invalid coordinates`,
         });
         continue;
+      } else {
+        hasCoords = false;
+        lat = 0;
+        lng = 0;
       }
     }
 
@@ -156,19 +198,22 @@ export function parseShopsCsv(content: string): CsvParseResult {
     const externalRef = get(row, "externalRef") || undefined;
     const nameKey = normalizeShopName(name);
 
+    // Coordinate-less rows fall back to name-only duplicate matching.
     const dupe = seen.find(
       (s) =>
         (externalRef && s.ref && s.ref === externalRef) ||
         (s.key === nameKey &&
-          haversineMeters({ lat, lng }, { lat: s.lat, lng: s.lng }) <= DUPLICATE_RADIUS_M),
+          (!hasCoords ||
+            !s.hasCoords ||
+            haversineMeters({ lat, lng }, { lat: s.lat, lng: s.lng }) <= DUPLICATE_RADIUS_M)),
     );
     if (dupe) {
       duplicatesInFile.push({ rowNumber, message: `"${name}": duplicate of an earlier row in this file` });
       continue;
     }
-    seen.push({ key: nameKey, lat, lng, ref: externalRef });
+    seen.push({ key: nameKey, lat, lng, ref: externalRef, hasCoords });
 
-    valid.push({
+    const parsedRow: ParsedShopRow = {
       rowNumber,
       name,
       address: get(row, "address") || undefined,
@@ -179,10 +224,12 @@ export function parseShopsCsv(content: string): CsvParseResult {
       email: email || undefined,
       notes: get(row, "notes") || undefined,
       externalRef,
-    });
+    };
+    if (hasCoords) valid.push(parsedRow);
+    else coordless.push(parsedRow);
   }
 
-  return { valid, errors, duplicatesInFile, totalRows: rowNumber };
+  return { valid, errors, duplicatesInFile, totalRows: rowNumber, coordless };
 }
 
 export interface ExistingShopLite {

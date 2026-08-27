@@ -92,6 +92,16 @@ export interface ImportSummaryDto {
   errors: { rowNumber: number; message: string }[];
 }
 
+export interface ImportSelectSummaryDto {
+  filename: string;
+  totalRows: number;
+  matched: number;
+  created: number;
+  /** Full records of every matched or newly created shop, ready to select. */
+  shops: ShopDto[];
+  skipped: { rowNumber: number; name: string; reason: string }[];
+}
+
 export interface DashboardStatsDto {
   totalShops: number;
   activeDrivers: number;

@@ -13,6 +13,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { api, ClientApiError } from "@/lib/client";
 import { isValidCoordinate } from "@/lib/geo";
+import { fileToShopsCsv } from "@/lib/sheet-file";
 import type { GeocodeResultDto, ImportSummaryDto, Paginated, ShopDto } from "@/lib/types";
 import {
   Badge,
@@ -377,8 +378,14 @@ function ImportModal({
     if (!file || uploading) return;
     setUploading(true);
     try {
+      // Excel sheets (and CSVs with banner rows above the header, like
+      // loading slips) are normalised to clean CSV before upload.
+      const csv = await fileToShopsCsv(file);
+      const payload = new File([csv], file.name.replace(/\.(xlsx|xls)$/i, ".csv"), {
+        type: "text/csv",
+      });
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", payload);
       const result = await api<ImportSummaryDto>("/api/shops/import", {
         method: "POST",
         body: fd,
@@ -397,7 +404,7 @@ function ImportModal({
   };
 
   return (
-    <Modal open={open} title="Import shops from CSV" onClose={summary ? done : onClose} wide>
+    <Modal open={open} title="Import shops from Excel/CSV" onClose={summary ? done : onClose} wide>
       {!summary ? (
         <div className="space-y-4">
           <div
@@ -431,13 +438,13 @@ function ImportModal({
               <p className="text-sm font-medium text-gray-900">{file.name}</p>
             ) : (
               <p className="text-sm text-gray-600">
-                Drag and drop a .csv file here, or click to browse
+                Drag and drop an .xlsx or .csv file here, or click to browse
               </p>
             )}
             <input
               ref={fileInputRef}
               type="file"
-              accept=".csv,text/csv"
+              accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
               className="hidden"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />

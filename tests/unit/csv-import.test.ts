@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseShopsCsv, partitionAgainstExisting } from "@/lib/csv-import";
+import { findHeaderRowIndex, parseShopsCsv, partitionAgainstExisting } from "@/lib/csv-import";
 import { readFileSync } from "fs";
 import { join } from "path";
 
@@ -122,5 +122,55 @@ describe("partitionAgainstExisting", () => {
     const rows = parseShopsCsv(`Name,Latitude,Longitude\nMilk & More,23.20,72.60`).valid;
     const { fresh } = partitionAgainstExisting(rows, existing);
     expect(fresh).toHaveLength(1);
+  });
+});
+
+describe("loading-slip support", () => {
+  const slip = `Sr.,Date,Bill No,Party,Debit,Longitude,Latitude
+"Beat :  AMUL (APO),SCIENCE CITY ROAD",,,,,,
+Sr.,Date,Bill No,Party,Debit,Longitude,Latitude
+1,21/08/26,2607590,SHIV CORNER - THALTEJ,0,0.0000000,0.0000000
+2,21/08/26,2607638,URBAN ZEST MART,1642,72.4779617,23.0929133
+,,,Total,235755,,`;
+
+  it("keeps coordinate-less rows separately with requireCoords: false", () => {
+    const r = parseShopsCsv(slip, { requireCoords: false });
+    expect(r.valid.map((v) => v.name)).toEqual(["URBAN ZEST MART"]);
+    expect(r.valid[0].latitude).toBeCloseTo(23.0929133);
+    expect(r.coordless.map((v) => v.name)).toEqual(["SHIV CORNER - THALTEJ"]);
+    expect(r.coordless[0].externalRef).toBe("2607590");
+  });
+
+  it("rejects coordinate-less rows by default and skips totals/header rows", () => {
+    const r = parseShopsCsv(slip);
+    expect(r.valid.map((v) => v.name)).toEqual(["URBAN ZEST MART"]);
+    expect(r.coordless).toHaveLength(0);
+    const messages = r.errors.map((e) => e.message).join(" | ");
+    expect(messages).toContain("totals row");
+    expect(messages).toContain("repeated header row");
+  });
+
+  it("dedupes coordinate-less rows by name alone in loose mode", () => {
+    const csv = `Party,Latitude,Longitude\nShiv Corner,,\nSHIV CORNER,,`;
+    const r = parseShopsCsv(csv, { requireCoords: false });
+    expect(r.coordless).toHaveLength(1);
+    expect(r.duplicatesInFile).toHaveLength(1);
+  });
+});
+
+describe("findHeaderRowIndex", () => {
+  it("finds the header row below banner rows", () => {
+    const rows = [
+      ["AAROGYA SALES -2026-27"],
+      ["Loading Slip"],
+      ["Salesman : MEHUL PATEL"],
+      ["Sr.", "Date", "Bill No", "Party", "Debit", "Longitude", "Latitude"],
+      [1, "21/08/26", "2607590", "SHIV CORNER", 0, 0, 0],
+    ];
+    expect(findHeaderRowIndex(rows)).toBe(3);
+  });
+
+  it("returns -1 when no name-like column exists", () => {
+    expect(findHeaderRowIndex([["a", "b"], [1, 2]])).toBe(-1);
   });
 });
